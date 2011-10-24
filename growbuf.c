@@ -4,6 +4,7 @@
  * by William R. Fraser, 10/19/2011
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -91,7 +92,7 @@ int growbuf_append(growbuf* gb, const void* buf, size_t len)
 
         if (gb->size + len < GROWBUF_ALLOC_GRANULARITY) {
 
-            newsize = gb->size;
+            newsize = gb->allocated_size;
             while (newsize < gb->size + len) {
                 newsize *= 2;
             }
@@ -102,6 +103,8 @@ int growbuf_append(growbuf* gb, const void* buf, size_t len)
             newsize = (((gb->size + len) / GROWBUF_ALLOC_GRANULARITY) + 1) * GROWBUF_ALLOC_GRANULARITY;
 
         }
+
+        printf("expanding growbuf to %u\n", newsize);
 
         newbuf = realloc(gb->buf, newsize);
         if (NULL == newbuf) {
@@ -118,4 +121,9 @@ int growbuf_append(growbuf* gb, const void* buf, size_t len)
     gb->size += len;
 
     return 0;
+}
+
+int growbuf_append_byte(growbuf* gb, char byte)
+{
+    return growbuf_append(gb, &byte, 1);
 }

@@ -1,12 +1,23 @@
-CFLAGS=-Wall -Werror -std=c99 -O0 -gstabs
-YFLAGS=-t
+CFLAGS=-Wall -Werror -Wno-unused-function -std=c99 -O0 -gstabs -D_POSIX_SOURCE
+YFLAGS=-t -v
 
 all: csvsel
 
-csvsel: main.o growbuf.o csvsel.o query.tab.o
+csvsel: main.o growbuf.o csvsel.o queryparse.tab.o querylex.tab.o
 
-query.tab.c: query.y
-	bison $(YFLAGS) -p query_ query.y
+csvsel.o: queryparse.tab.h
+
+queryparse.tab.c: queryparse.y
+	bison $(YFLAGS) -p query_ --defines=queryparse.tab.h queryparse.y
+
+queryparse.tab.h: queryparse.tab.c
+
+querylex.tab.c: querylex.l
+	flex -P query_ -o querylex.tab.c querylex.l
+
+test: test.o queryparse.tab.o querylex.tab.o growbuf.o
+
+test.o: queryparse.tab.h
 
 clean:
-	rm -f csvsel *.o *.tab.c
+	rm -f csvsel test *.o *.tab.c *.tab.h
