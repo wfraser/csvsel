@@ -39,7 +39,7 @@ WHITESPACE  [ \t\r\n]
 "("             { return TOK_LPAREN; }
 ")"             { return TOK_RPAREN; }
 {COLUMN}        { 
-                    query_lval.num = atoi(yytext + 1);
+                    query_lval.num = atoi(yytext + 1) - 1;
                     return TOK_COLUMN; 
                 }
 {NUMBER}        { 
@@ -83,6 +83,8 @@ WHITESPACE  [ \t\r\n]
 <STRING>[^\\\n\"]+ {
                     growbuf_append(string_buf, query_text, strlen(query_text));
                 }
+
+\0              { /* nothing */ }
 
 .               { return TOK_ERROR; }
 

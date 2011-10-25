@@ -12,6 +12,8 @@
 //#define DEBUG if (false)
 #define DEBUG
 
+int query_debug = 0;
+
 int main(int argc, char** argv)
 {
     int    retval          = EX_OK;
@@ -25,8 +27,19 @@ int main(int argc, char** argv)
         goto cleanup;
     }
 
+    if (argc == 1) {
+        fprintf(stderr, "usage: %s [-f inputfile] <query string>\n", argv[0]);
+        retval = EX_USAGE;
+        goto cleanup;
+    }
+
     for (size_t i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-f") == 0
+        if (strcmp(argv[i], "-d") == 0
+                || strcmp(argv[i], "--debug") == 0) {
+            query_debug = 1;
+            query_arg_start = i + 1;
+        }
+        else if (strcmp(argv[i], "-f") == 0
                 || strcmp(argv[i], "--file") == 0) {
 
             if (argc < 3) {
@@ -54,8 +67,9 @@ int main(int argc, char** argv)
 
             query_arg_start = i + 2;
         }
-
-        break;
+        else {
+            break;
+        }
     }
 
     //

@@ -104,10 +104,11 @@ int growbuf_append(growbuf* gb, const void* buf, size_t len)
 
         }
 
-        printf("expanding growbuf to %u\n", newsize);
+        fprintf(stderr, "expanding growbuf to %zu\n", newsize);
 
         newbuf = realloc(gb->buf, newsize);
         if (NULL == newbuf) {
+            fprintf(stderr, "GROWBUF EXPANSION FAILED\n");
             return -ENOMEM;
         }
 
