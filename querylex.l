@@ -29,6 +29,7 @@ WHITESPACE  [ \t\r\n]
 "select"        { return TOK_SELECT; }
 "where"         { return TOK_WHERE; }
 "="             { return TOK_EQ; }
+"!="            { return TOK_NEQ; }
 ">"             { return TOK_GT; }
 "<"             { return TOK_LT; }
 ">="            { return TOK_GTE; }
@@ -86,6 +87,9 @@ WHITESPACE  [ \t\r\n]
 
 \0              { /* nothing */ }
 
-.               { return TOK_ERROR; }
+.               {
+                    fprintf(stderr, "illegal '%s' in input\n", yytext);
+                    return TOK_ERROR;
+                }
 
 %%

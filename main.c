@@ -9,8 +9,8 @@
 #include "growbuf.h"
 #include "csvsel.h"
 
-//#define DEBUG if (false)
-#define DEBUG
+#define DEBUG if (false)
+//#define DEBUG
 
 int query_debug = 0;
 

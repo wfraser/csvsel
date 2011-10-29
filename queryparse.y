@@ -53,7 +53,11 @@ int queryparse(const char* query, size_t query_length, growbuf* selected_columns
 
     close(fd[1]);
 
-    return query_parse();
+    int retval = query_parse();
+
+    fclose(query_in);
+
+    return retval;
 }
 
 compound* new_compound()
@@ -67,6 +71,22 @@ compound* new_compound()
     return c;
 }
 
+void free_compound(compound* c)
+{
+    if (NULL != c) {
+        if (c->simple.rval.is_str && NULL != c->simple.rval.str) {
+            free(c->simple.rval.str);
+        }
+        compound* l = c->left;
+        compound* r = c->right;
+
+        free(c);
+
+        free_compound(l);
+        free_compound(r);
+    }
+}
+
 %}
 
 %union {
@@ -76,7 +96,7 @@ compound* new_compound()
     compound* compound;
 }
 
-%token TOK_SELECT TOK_WHERE TOK_EQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_ERROR
+%token TOK_SELECT TOK_WHERE TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_ERROR
 
 %token <num> TOK_NUMBER
 %token <num> TOK_COLUMN
@@ -118,6 +138,15 @@ Clause  : TOK_COLUMN TOK_EQ Rvalue {
 
             $$->simple.column = $1;
             $$->simple.oper = TOK_EQ;
+            $$->simple.rval = $3;
+
+            $$->oper = OPER_SIMPLE;
+        }
+        | TOK_COLUMN TOK_NEQ Rvalue {
+            $$ = new_compound();
+
+            $$->simple.column = $1;
+            $$->simple.oper = TOK_NEQ;
             $$->simple.rval = $3;
 
             $$->oper = OPER_SIMPLE;

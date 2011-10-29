@@ -11,7 +11,10 @@
 
 #include "csvsel.h"
 
-#define DEBUG
+//#define DEBUG
+#define DEBUG if (false)
+
+extern int query_debug;
 
 bool string_is_num(const char* string)
 {
@@ -23,6 +26,39 @@ bool string_is_num(const char* string)
     }
 
     return true;
+}
+
+void print_selected_columns(growbuf* fields, growbuf* selected_columns)
+{
+    for (size_t i = 0; i < selected_columns->size / sizeof(size_t); i++)
+    {
+        size_t col = ((size_t*)selected_columns->buf)[i];
+        
+        char* colstr = (char*)((growbuf**)fields->buf)[col]->buf;
+
+        if (NULL != strchr(colstr, ' ')) {
+            printf("\"");
+            for (size_t j = 0; j < strlen(colstr); j++) {
+                if (colstr[j] == '"') {
+                    printf("\"\"");
+                }
+                else {
+                    printf("%c", colstr[j]);
+                }
+            }
+            printf("\"");
+        }
+        else {
+            printf("%s", colstr);
+        }
+
+        if (i != selected_columns->size / sizeof(size_t) - 1) {
+            printf(",");
+        }
+        else {
+            printf("\n");
+        }
+    }
 }
 
 bool query_evaluate(growbuf* fields, compound* condition)
@@ -87,6 +123,10 @@ bool query_evaluate(growbuf* fields, compound* condition)
                 COMPARE(==)
                 break;
 
+            case TOK_NEQ:
+                COMPARE(!=)
+                break;
+
             case TOK_GT:
                 COMPARE(>)
                 break;
@@ -104,6 +144,8 @@ bool query_evaluate(growbuf* fields, compound* condition)
                 break;
             }
         }
+        break;
+
     case OPER_NOT:
         retval = ! query_evaluate(fields, condition->left);
         break;
@@ -123,6 +165,8 @@ bool query_evaluate(growbuf* fields, compound* condition)
 int csv_select(FILE* input, const char* query, size_t query_length)
 {
     int retval = 0;
+    growbuf* fields = NULL;
+    growbuf* field  = NULL;
 
     growbuf* selected_columns = NULL;
     compound* root_condition = NULL;
@@ -134,17 +178,25 @@ int csv_select(FILE* input, const char* query, size_t query_length)
         goto cleanup;
     }
 
-    queryparse(query, query_length, selected_columns, &root_condition);
+    if (0 != queryparse(query, query_length, selected_columns, &root_condition))
+    {
+        retval = 3;
+        goto cleanup;
+    }
 
-    fprintf(stderr, "condition:\n");
-    print_condition(root_condition, 0);
+    if (query_debug)
+    {
+        fprintf(stderr, "condition:\n");
+        print_condition(root_condition, 0);
+    }
 
     size_t line = 0;
     bool in_dquot = false;
     bool prev_was_dquot = false;
-    growbuf* fields = growbuf_create(1);
-    growbuf* field = growbuf_create(32);
-    growbuf_append(fields, field, sizeof(growbuf*));
+
+    fields = growbuf_create(1);
+    field = growbuf_create(32);
+    growbuf_append(fields, &field, sizeof(growbuf*));
     while (true) { // iterate over lines
         int char_in = fgetc(input);
 
@@ -153,18 +205,15 @@ int csv_select(FILE* input, const char* query, size_t query_length)
         }
 
         char c = (char)char_in;
-        DEBUG fprintf(stderr, "(%c)", c);
         switch (c) {
         case '"':
             if (in_dquot) {
                 if (prev_was_dquot) {
                     growbuf_append(field, &c, 1);
                     prev_was_dquot = false;
-                    DEBUG fprintf(stderr, "no longer in prev_was_dquot");
                 }
                 else {
                     prev_was_dquot = true;
-                    DEBUG fprintf(stderr, "now in prev_was_dquot");
                     // don't append yet, wait for the next char.
                 }
             }
@@ -177,7 +226,6 @@ int csv_select(FILE* input, const char* query, size_t query_length)
                 goto cleanup;
             }
             else {
-                DEBUG fprintf(stderr, "now in dquot");
                 in_dquot = true;
                 // don't append.
            }
@@ -186,15 +234,19 @@ int csv_select(FILE* input, const char* query, size_t query_length)
        case '\n':
            if (!in_dquot || prev_was_dquot) {
                 // we're done with the line
-                DEBUG fprintf(stderr, "done with line");
                 c = '\0';
                 growbuf_append(field, &c, 1);
-                    
-                if (query_evaluate(fields, root_condition)) {
-                    DEBUG printf("line %u matches\n", line);
+
+                DEBUG for (size_t i = 0; i < fields->size / sizeof(void*); i++)
+                {
+                    fprintf(stderr, "field %zu: ", i);
+                    fprintf(stderr, "\"%s\"\n",
+                        (char*)(((growbuf**)fields->buf)[i]->buf)
+                    );
                 }
-                else {
-                    DEBUG printf("line %u doesn't match.\n", line);
+
+                if (query_evaluate(fields, root_condition)) {
+                    print_selected_columns(fields, selected_columns);
                 }
 
                 for (size_t i = 0; i < fields->size / sizeof(void*); i++) {
@@ -202,7 +254,7 @@ int csv_select(FILE* input, const char* query, size_t query_length)
                 }
                 fields->size = 0;
                 field = growbuf_create(32);
-                growbuf_append(fields, field, sizeof(void*));
+                growbuf_append(fields, &field, sizeof(void*));
                 in_dquot = false;
                 prev_was_dquot = false;
                 line++;
@@ -217,9 +269,11 @@ int csv_select(FILE* input, const char* query, size_t query_length)
         case ',':
             if (!in_dquot || prev_was_dquot) {
                 // we're done with the field
-                DEBUG fprintf(stderr, "done with field");
+                c = '\0';
+                growbuf_append(field, &c, 1);
+
                 field = growbuf_create(32);
-                growbuf_append(fields, field, sizeof(void*));
+                growbuf_append(fields, &field, sizeof(void*));
                 in_dquot = false;
                 prev_was_dquot = false;
             }
@@ -229,12 +283,9 @@ int csv_select(FILE* input, const char* query, size_t query_length)
             break;
 
         default:
-            if (in_dquot) {
-                if (prev_was_dquot) {
-                    in_dquot = false;
-                    DEBUG fprintf(stderr, "not in dquot");
-                    // the field better end after this, or else badness.
-                }
+            if (in_dquot && prev_was_dquot) {
+                in_dquot = false;
+                // the field better end after this, or else badness.
             }
             else {
                 growbuf_append(field, &c, 1);
@@ -246,12 +297,15 @@ int csv_select(FILE* input, const char* query, size_t query_length)
     } // while (true)
 
 handle_eof:
-    
-    if (query_evaluate(fields, root_condition)) {
-        DEBUG printf("line %u matches\n", line);
-    }
-    else {
-        DEBUG printf("line %u doesn't match\n", line);
+
+    if (fields->size / sizeof(void*) > 0
+            && (fields->size / sizeof(void*) == 1 
+                ? ((growbuf**)fields->buf)[0]->size > 0
+                : false))
+    {
+        if (query_evaluate(fields, root_condition)) {
+            print_selected_columns(fields, selected_columns);
+        }
     }
 
 cleanup:
@@ -264,6 +318,10 @@ cleanup:
             growbuf_free(((growbuf**)(fields->buf))[i]);
         }
         growbuf_free(fields);
+    }
+
+    if (NULL != root_condition) {
+        free_compound(root_condition);
     }
 
     return retval;

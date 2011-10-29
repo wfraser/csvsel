@@ -37,4 +37,6 @@ typedef struct _compound
 
 int queryparse(const char* query, size_t query_length, growbuf* selected_columns, compound** root_condition);
 
+void free_compound(compound* c);
+
 #endif // QUERY_H

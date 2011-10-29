@@ -1,4 +1,4 @@
 #!/bin/sh
 
-valgrind ./csvsel -d -f test.csv select %1 where %2 = %3
+valgrind --leak-check=full --show-reachable=yes ./csvsel -d -f test.csv select %1 where %2 = %3
 
