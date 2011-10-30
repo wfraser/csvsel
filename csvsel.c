@@ -30,9 +30,15 @@ bool string_is_num(const char* string)
 
 void print_selected_columns(growbuf* fields, growbuf* selected_columns)
 {
-    for (size_t i = 0; i < selected_columns->size / sizeof(size_t); i++)
+    size_t first_col = ((size_t*)selected_columns->buf)[0];
+
+    size_t num_selected_columns = selected_columns->size / sizeof(size_t);
+    size_t num_columns = fields->size / sizeof(void*);
+    size_t limit = (first_col == -1) ? num_columns : num_selected_columns;
+    
+    for (size_t i = 0; i < limit; i++)
     {
-        size_t col = ((size_t*)selected_columns->buf)[i];
+        size_t col = (first_col == -1) ? i : ((size_t*)selected_columns->buf)[i];
         
         char* colstr = (char*)((growbuf**)fields->buf)[col]->buf;
 
@@ -52,7 +58,7 @@ void print_selected_columns(growbuf* fields, growbuf* selected_columns)
             printf("%s", colstr);
         }
 
-        if (i != selected_columns->size / sizeof(size_t) - 1) {
+        if (i != limit - 1) {
             printf(",");
         }
         else {
@@ -65,6 +71,11 @@ bool query_evaluate(growbuf* fields, compound* condition)
 {
     bool retval = true;
 
+    if (NULL == condition) {
+        // return true
+        goto cleanup;
+    }
+
     switch (condition->oper) {
     case OPER_SIMPLE:
         {
@@ -72,7 +83,8 @@ bool query_evaluate(growbuf* fields, compound* condition)
                 fprintf(stderr, "invalid column %lu, there are only %zu present.\n",
                         condition->simple.column,
                         fields->size / sizeof(void*));
-                return false;
+                retval = false;
+                goto cleanup;
             }
 
             char* check_field_str = ((growbuf**)(fields->buf))[condition->simple.column]->buf;
@@ -97,7 +109,8 @@ bool query_evaluate(growbuf* fields, compound* condition)
                         fprintf(stderr, "invalid column %lu, there are only %zu present.\n",
                                 condition->simple.rval.col,
                                 fields->size / sizeof(void*));
-                        return false;
+                        retval = false;
+                        goto cleanup;
                     }
                     DEBUG fprintf(stderr, "comparing to column %lu\n",
                             condition->simple.rval.col);
@@ -159,6 +172,7 @@ bool query_evaluate(growbuf* fields, compound* condition)
         break;
     }
 
+cleanup:
     return retval;
 }
 
