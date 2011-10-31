@@ -6,23 +6,41 @@
 #include <sysexits.h>
 #include "growbuf.h"
 
-typedef struct _rval
+typedef enum
+{
+    SPECIAL_NUMCOLS, SPECIAL_ROWNUM
+}
+special_value;
+
+typedef struct
 {
     union {
-        long  num;
-        char* str;
-        long  col;
+        long          num;
+        char*         str;
+        size_t        col;
+        special_value special;
     };
     bool is_num;
     bool is_str;
     bool is_col;
+    bool is_special;
 } rval;
 
 typedef struct
 {
-    int    oper;
-    long   column;
-    rval   rval;
+    union {
+        size_t        col;
+        special_value special;
+    };
+    bool is_col;
+    bool is_special;
+} lval;
+
+typedef struct
+{
+    int  oper;
+    lval lval;
+    rval rval;
 } condition;
 
 typedef struct _compound

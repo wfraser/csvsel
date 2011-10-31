@@ -67,7 +67,7 @@ void print_selected_columns(growbuf* fields, growbuf* selected_columns)
     }
 }
 
-bool query_evaluate(growbuf* fields, compound* condition)
+bool query_evaluate(growbuf* fields, compound* condition, size_t rownum)
 {
     bool retval = true;
 
@@ -79,40 +79,64 @@ bool query_evaluate(growbuf* fields, compound* condition)
     switch (condition->oper) {
     case OPER_SIMPLE:
         {
-            if (fields->size / sizeof(void*) < condition->simple.column) {
-                fprintf(stderr, "invalid column %lu, there are only %zu present.\n",
-                        condition->simple.column,
-                        fields->size / sizeof(void*));
-                retval = false;
-                goto cleanup;
-            }
+            char*  check_field_str = NULL;
+            long   check_field_num = 0;
+            bool   numeric_comparison = false;
 
-            char* check_field_str = ((growbuf**)(fields->buf))[condition->simple.column]->buf;
-            long  check_field_num = 0;
-            bool  numeric_comparison = false;
+            if (condition->simple.lval.is_col) {
+
+                if (fields->size / sizeof(void*) < condition->simple.lval.col) {
+                    fprintf(stderr, "invalid column %zu, there are only %zu present.\n",
+                            condition->simple.lval.col,
+                            fields->size / sizeof(void*));
+                    retval = false;
+                    goto cleanup;
+                }
+
+                check_field_str = ((growbuf**)(fields->buf))[condition->simple.lval.col]->buf;
+
+            }
+            if (condition->simple.lval.is_special) {
+                switch (condition->simple.lval.special) {
+                case SPECIAL_NUMCOLS:
+                    check_field_num = fields->size / sizeof(void*);
+                    numeric_comparison = true;
+                    break;
+                case SPECIAL_ROWNUM:
+                    check_field_num = rownum;
+                    numeric_comparison = true;
+                    break;
+                default:
+                    fprintf(stderr, "unknown special value\n");
+                    retval = false;
+                    goto cleanup;
+                }
+            }
 
             char* rval_str = NULL;
 
             if (condition->simple.rval.is_num) {
-                if (string_is_num(check_field_str)) {
-                    check_field_num = atoi(check_field_str);
-                    numeric_comparison = true;
-                }
-                else {
-                    retval = false;
-                    break;
+                if (!numeric_comparison) {
+                    if (string_is_num(check_field_str)) {
+                        check_field_num = atoi(check_field_str);
+                        numeric_comparison = true;
+                    }
+                    else {
+                        retval = false;
+                        break;
+                    }
                 }
             }
             else {
                 if (condition->simple.rval.is_col) {
                     if (fields->size / sizeof(void*) < condition->simple.rval.col) {
-                        fprintf(stderr, "invalid column %lu, there are only %zu present.\n",
+                        fprintf(stderr, "invalid column %zu, there are only %zu present.\n",
                                 condition->simple.rval.col,
                                 fields->size / sizeof(void*));
                         retval = false;
                         goto cleanup;
                     }
-                    DEBUG fprintf(stderr, "comparing to column %lu\n",
+                    DEBUG fprintf(stderr, "comparing to column %zu\n",
                             condition->simple.rval.col);
 
                     rval_str = ((growbuf**)(fields->buf))[condition->simple.rval.col]->buf;
@@ -160,15 +184,15 @@ bool query_evaluate(growbuf* fields, compound* condition)
         break;
 
     case OPER_NOT:
-        retval = ! query_evaluate(fields, condition->left);
+        retval = ! query_evaluate(fields, condition->left, rownum);
         break;
 
     case OPER_AND:
-        retval = (query_evaluate(fields, condition->left) && query_evaluate(fields, condition->right));
+        retval = (query_evaluate(fields, condition->left, rownum) && query_evaluate(fields, condition->right, rownum));
         break;
 
     case OPER_OR:
-        retval = (query_evaluate(fields, condition->left) || query_evaluate(fields, condition->right));
+        retval = (query_evaluate(fields, condition->left, rownum) || query_evaluate(fields, condition->right, rownum));
         break;
     }
 
@@ -204,7 +228,7 @@ int csv_select(FILE* input, const char* query, size_t query_length)
         print_condition(root_condition, 0);
     }
 
-    size_t line = 0;
+    size_t rownum = 0;
     bool in_dquot = false;
     bool prev_was_dquot = false;
 
@@ -234,7 +258,7 @@ int csv_select(FILE* input, const char* query, size_t query_length)
             else if (field->size != 0) {
                 fprintf(stderr, "csv syntax error: unexpected double-quote in"
                         " line %u field %u\n",
-                        line,
+                        rownum,
                         fields->size / sizeof(void*));
                 retval = EX_DATAERR;
                 goto cleanup;
@@ -259,7 +283,7 @@ int csv_select(FILE* input, const char* query, size_t query_length)
                     );
                 }
 
-                if (query_evaluate(fields, root_condition)) {
+                if (query_evaluate(fields, root_condition, rownum)) {
                     print_selected_columns(fields, selected_columns);
                 }
 
@@ -271,7 +295,7 @@ int csv_select(FILE* input, const char* query, size_t query_length)
                 growbuf_append(fields, &field, sizeof(void*));
                 in_dquot = false;
                 prev_was_dquot = false;
-                line++;
+                rownum++;
                 break;
             }
             else {
@@ -317,7 +341,7 @@ handle_eof:
                 ? ((growbuf**)fields->buf)[0]->size > 0
                 : false))
     {
-        if (query_evaluate(fields, root_condition)) {
+        if (query_evaluate(fields, root_condition, rownum)) {
             print_selected_columns(fields, selected_columns);
         }
     }

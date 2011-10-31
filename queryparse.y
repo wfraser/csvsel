@@ -90,20 +90,28 @@ void free_compound(compound* c)
 %}
 
 %union {
-    long      num;
-    char*     str;
-    rval      rval;
-    compound* compound;
+    long          num;
+    char*         str;
+    size_t        col;
+    special_value special;
+    rval          rval;
+    lval          lval;
+    compound*     compound;
+    condition     simple;
 }
 
 %token TOK_SELECT TOK_WHERE TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_DASH TOK_ERROR
 
 %token <num> TOK_NUMBER
-%token <num> TOK_COLUMN
+%token <col> TOK_COLUMN
 %token <str> TOK_STRING
+%token <special> TOK_SPECIAL
 
+%type <lval> Lvalue
 %type <rval> Rvalue
-%type <compound> Clause
+%type <compound> Compound
+%type <simple> Simple
+%type <num> Operator
 
 %error-verbose
 
@@ -136,85 +144,65 @@ Columnspec
 ;
 
 Conditions
-    : Clause {
+    : Compound {
         *ROOT_CONDITION = $1;
     }
 ;
 
-Clause
-    : TOK_COLUMN TOK_EQ Rvalue {
-        $$ = new_compound();
-
-        $$->simple.column = $1;
-        $$->simple.oper = TOK_EQ;
-        $$->simple.rval = $3;
-
-        $$->oper = OPER_SIMPLE;
+Simple
+    : Lvalue Operator Rvalue {
+        $$.lval = $1;
+        $$.oper = $2;
+        $$.rval = $3;
     }
-    | TOK_COLUMN TOK_NEQ Rvalue {
-        $$ = new_compound();
+;
 
-        $$->simple.column = $1;
-        $$->simple.oper = TOK_NEQ;
-        $$->simple.rval = $3;
-
-        $$->oper = OPER_SIMPLE;
-    }
-    | TOK_COLUMN TOK_GT Rvalue {
-        $$ = new_compound();
-
-        $$->simple.column = $1;
-        $$->simple.oper = TOK_GT;
-        $$->simple.rval = $3;
-
-        $$->oper = OPER_SIMPLE;
-    }
-    | TOK_COLUMN TOK_LT Rvalue {
-        $$ = new_compound();
-
-        $$->simple.column = $1;
-        $$->simple.oper = TOK_LT;
-        $$->simple.rval = $3;
-
-        $$->oper = OPER_SIMPLE;
-    }
-    | TOK_COLUMN TOK_GTE Rvalue {
-        $$ = new_compound();
-
-        $$->simple.column = $1;
-        $$->simple.oper = TOK_GTE;
-        $$->simple.rval = $3;
-
-        $$->oper = OPER_SIMPLE; 
-    }
-    | TOK_COLUMN TOK_LTE Rvalue {
-        $$ = new_compound();
-
-        $$->simple.column = $1;
-        $$->simple.oper = TOK_LTE;
-        $$->simple.rval = $3;
-
-        $$->oper = OPER_SIMPLE;
-    }
-    | Clause TOK_AND Clause {
+Compound
+    : Compound TOK_AND Compound {
         $$ = new_compound();
         $$->left = $1;
         $$->right = $3;
         $$->oper = OPER_AND;
     }
-    | Clause TOK_OR Clause {
+    | Compound TOK_OR Compound {
         $$ = new_compound();
         $$->left = $1;
         $$->right = $3;
         $$->oper = OPER_OR;
     }
-    | TOK_NOT Clause {
+    | TOK_NOT Compound {
         $$ = new_compound();
         $$->left = $2;
         $$->oper = OPER_NOT;
     }
-    | TOK_LPAREN Clause TOK_RPAREN {
+    | TOK_LPAREN Compound TOK_RPAREN {
         $$ = $2;
+    }
+    | Simple {
+        $$ = new_compound();
+        $$->simple = $1;
+        $$->oper = OPER_SIMPLE;
+    }
+;
+
+Operator
+    : TOK_EQ {
+        $$ = TOK_EQ;
+    }
+    | TOK_NEQ {
+        $$ = TOK_NEQ;
+    }
+    | TOK_GT {
+        $$ = TOK_GT;
+    }
+    | TOK_LT {
+        $$ = TOK_LT;
+    }
+    | TOK_GTE {
+        $$ = TOK_GTE;
+    }
+    | TOK_LTE {
+        $$ = TOK_LTE;
     }
 ;
 
@@ -230,6 +218,17 @@ Rvalue
     | TOK_NUMBER {
         $$.num = $1;
         $$.is_num = true;
+    }
+;
+
+Lvalue
+    : TOK_COLUMN {
+        $$.col = $1;
+        $$.is_col = true;
+    }
+    | TOK_SPECIAL {
+        $$.special = $1;
+        $$.is_special = true;
     }
 ;
 

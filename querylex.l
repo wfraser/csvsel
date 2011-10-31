@@ -41,8 +41,16 @@ WHITESPACE  [ \t\r\n]
 ")"             { return TOK_RPAREN; }
 "-"             { return TOK_DASH; }
 {COLUMN}        { 
-                    query_lval.num = atoi(yytext + 1) - 1;
+                    query_lval.col = atoi(yytext + 1) - 1;
                     return TOK_COLUMN; 
+                }
+\%%             {
+                    query_lval.special = SPECIAL_NUMCOLS;
+                    return TOK_SPECIAL;
+                }
+%#              {
+                    query_lval.special = SPECIAL_ROWNUM;
+                    return TOK_SPECIAL;
                 }
 {NUMBER}        { 
                     query_lval.num = atoi(yytext);

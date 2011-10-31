@@ -13,7 +13,7 @@ void print_rval(rval r)
         printf("str: %s", r.str);
     }
     if (r.is_col) {
-        printf("column: %ld", r.col);
+        printf("column: %zu", r.col);
     }
 }
 
@@ -29,7 +29,26 @@ void print_condition(compound* c, size_t indent)
     switch (c->oper) {
     case OPER_SIMPLE:
         print_indent(indent);
-        printf("column %ld ", c->simple.column);
+        if (c->simple.lval.is_col) {
+            printf("column %zu ", c->simple.lval.col);
+        }
+        else if (c->simple.lval.is_special) {
+            switch (c->simple.lval.special) {
+            case SPECIAL_NUMCOLS:
+                printf("<number of columns> ");
+                break;
+            case SPECIAL_ROWNUM:
+                printf("<row number> ");
+                break;
+            default:
+                printf("<unknown special value!!> ");
+                break;
+            }
+        }
+        else {
+            printf("<wtf value!!!!!!!> ");
+        }
+
         switch (c->simple.oper) {
         case TOK_EQ:
             printf("=");
