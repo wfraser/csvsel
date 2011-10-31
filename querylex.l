@@ -18,7 +18,7 @@ growbuf* string_buf = NULL;
 %option noyywrap
 
 COLUMN      %[0-9]+
-NUMBER      [0-9]+
+NUMBER      -?[0-9]+
 WHITESPACE  [ \t\r\n]
 
 %x STRING
@@ -39,6 +39,7 @@ WHITESPACE  [ \t\r\n]
 "not"           { return TOK_NOT; }
 "("             { return TOK_LPAREN; }
 ")"             { return TOK_RPAREN; }
+"-"             { return TOK_DASH; }
 {COLUMN}        { 
                     query_lval.num = atoi(yytext + 1) - 1;
                     return TOK_COLUMN; 

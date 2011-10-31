@@ -96,7 +96,7 @@ void free_compound(compound* c)
     compound* compound;
 }
 
-%token TOK_SELECT TOK_WHERE TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_ERROR
+%token TOK_SELECT TOK_WHERE TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_DASH TOK_ERROR
 
 %token <num> TOK_NUMBER
 %token <num> TOK_COLUMN
@@ -114,18 +114,24 @@ Start : TOK_SELECT Columns TOK_WHERE Conditions
 {
 }
 
-Columns : Columns TOK_COMMA TOK_COLUMN {
-            size_t col = $3;
-            growbuf_append(SELECTED_COLUMNS, &col, sizeof(size_t));
-          }
-        | TOK_COLUMN {
-            size_t col = $1;
-            growbuf_append(SELECTED_COLUMNS, &col, sizeof(size_t));
-          }
-        | { 
-            size_t max = SIZE_MAX;
-            growbuf_append(SELECTED_COLUMNS, &max, sizeof(size_t));
-          }
+Columns : Columns TOK_COMMA Columnspec
+        | Columnspec
+;
+
+Columnspec
+    : TOK_COLUMN TOK_DASH TOK_COLUMN {
+        for (size_t i = $1; i <= $3; i++) {
+            growbuf_append(SELECTED_COLUMNS, &i, sizeof(size_t));
+        }
+    }
+    | TOK_COLUMN {
+        size_t col = $1;
+        growbuf_append(SELECTED_COLUMNS, &col, sizeof(size_t));
+    }
+    | { 
+        size_t max = SIZE_MAX;
+        growbuf_append(SELECTED_COLUMNS, &max, sizeof(size_t));
+    }
 ;
 
 Conditions  : Clause {
