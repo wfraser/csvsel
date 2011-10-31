@@ -109,13 +109,14 @@ void free_compound(compound* c)
 
 %%
 
-Start : TOK_SELECT Columns TOK_WHERE Conditions
-      | TOK_SELECT Columns
-{
-}
+Start
+    : TOK_SELECT Columns TOK_WHERE Conditions
+    | TOK_SELECT Columns
+;
 
-Columns : Columns TOK_COMMA Columnspec
-        | Columnspec
+Columns
+    : Columns TOK_COMMA Columnspec
+    | Columnspec
 ;
 
 Columnspec
@@ -134,99 +135,102 @@ Columnspec
     }
 ;
 
-Conditions  : Clause {
-                *ROOT_CONDITION = $1;
-            }
+Conditions
+    : Clause {
+        *ROOT_CONDITION = $1;
+    }
 ;
 
-Clause  : TOK_COLUMN TOK_EQ Rvalue {
-            $$ = new_compound();
+Clause
+    : TOK_COLUMN TOK_EQ Rvalue {
+        $$ = new_compound();
 
-            $$->simple.column = $1;
-            $$->simple.oper = TOK_EQ;
-            $$->simple.rval = $3;
+        $$->simple.column = $1;
+        $$->simple.oper = TOK_EQ;
+        $$->simple.rval = $3;
 
-            $$->oper = OPER_SIMPLE;
-        }
-        | TOK_COLUMN TOK_NEQ Rvalue {
-            $$ = new_compound();
+        $$->oper = OPER_SIMPLE;
+    }
+    | TOK_COLUMN TOK_NEQ Rvalue {
+        $$ = new_compound();
 
-            $$->simple.column = $1;
-            $$->simple.oper = TOK_NEQ;
-            $$->simple.rval = $3;
+        $$->simple.column = $1;
+        $$->simple.oper = TOK_NEQ;
+        $$->simple.rval = $3;
 
-            $$->oper = OPER_SIMPLE;
-        }
-        | TOK_COLUMN TOK_GT Rvalue {
-            $$ = new_compound();
+        $$->oper = OPER_SIMPLE;
+    }
+    | TOK_COLUMN TOK_GT Rvalue {
+        $$ = new_compound();
 
-            $$->simple.column = $1;
-            $$->simple.oper = TOK_GT;
-            $$->simple.rval = $3;
+        $$->simple.column = $1;
+        $$->simple.oper = TOK_GT;
+        $$->simple.rval = $3;
 
-            $$->oper = OPER_SIMPLE;
-        }
-        | TOK_COLUMN TOK_LT Rvalue {
-            $$ = new_compound();
+        $$->oper = OPER_SIMPLE;
+    }
+    | TOK_COLUMN TOK_LT Rvalue {
+        $$ = new_compound();
 
-            $$->simple.column = $1;
-            $$->simple.oper = TOK_LT;
-            $$->simple.rval = $3;
+        $$->simple.column = $1;
+        $$->simple.oper = TOK_LT;
+        $$->simple.rval = $3;
 
-            $$->oper = OPER_SIMPLE;
-        }
-        | TOK_COLUMN TOK_GTE Rvalue {
-            $$ = new_compound();
+        $$->oper = OPER_SIMPLE;
+    }
+    | TOK_COLUMN TOK_GTE Rvalue {
+        $$ = new_compound();
 
-            $$->simple.column = $1;
-            $$->simple.oper = TOK_GTE;
-            $$->simple.rval = $3;
+        $$->simple.column = $1;
+        $$->simple.oper = TOK_GTE;
+        $$->simple.rval = $3;
 
-            $$->oper = OPER_SIMPLE; 
-        }
-        | TOK_COLUMN TOK_LTE Rvalue {
-            $$ = new_compound();
+        $$->oper = OPER_SIMPLE; 
+    }
+    | TOK_COLUMN TOK_LTE Rvalue {
+        $$ = new_compound();
 
-            $$->simple.column = $1;
-            $$->simple.oper = TOK_LTE;
-            $$->simple.rval = $3;
+        $$->simple.column = $1;
+        $$->simple.oper = TOK_LTE;
+        $$->simple.rval = $3;
 
-            $$->oper = OPER_SIMPLE;
-        }
-        | Clause TOK_AND Clause {
-            $$ = new_compound();
-            $$->left = $1;
-            $$->right = $3;
-            $$->oper = OPER_AND;
-        }
-        | Clause TOK_OR Clause {
-            $$ = new_compound();
-            $$->left = $1;
-            $$->right = $3;
-            $$->oper = OPER_OR;
-        }
-        | TOK_NOT Clause {
-            $$ = new_compound();
-            $$->left = $2;
-            $$->oper = OPER_NOT;
-        }
-        | TOK_LPAREN Clause TOK_RPAREN {
-            $$ = $2;
-        }
+        $$->oper = OPER_SIMPLE;
+    }
+    | Clause TOK_AND Clause {
+        $$ = new_compound();
+        $$->left = $1;
+        $$->right = $3;
+        $$->oper = OPER_AND;
+    }
+    | Clause TOK_OR Clause {
+        $$ = new_compound();
+        $$->left = $1;
+        $$->right = $3;
+        $$->oper = OPER_OR;
+    }
+    | TOK_NOT Clause {
+        $$ = new_compound();
+        $$->left = $2;
+        $$->oper = OPER_NOT;
+    }
+    | TOK_LPAREN Clause TOK_RPAREN {
+        $$ = $2;
+    }
 ;
 
-Rvalue  : TOK_COLUMN {
-            $$.col = $1;
-            $$.is_col = true;
-        }
-        | TOK_STRING {
-            $$.str = $1;
-            $$.is_str = true;
-        }
-        | TOK_NUMBER {
-            $$.num = $1;
-            $$.is_num = true;
-        }
+Rvalue
+    : TOK_COLUMN {
+        $$.col = $1;
+        $$.is_col = true;
+    }
+    | TOK_STRING {
+        $$.str = $1;
+        $$.is_str = true;
+    }
+    | TOK_NUMBER {
+        $$.num = $1;
+        $$.is_num = true;
+    }
 ;
 
 %%
