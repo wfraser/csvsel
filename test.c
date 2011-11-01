@@ -13,7 +13,13 @@ int main(int argc, char** argv)
     compound *c;
 
     //queryparse(NULL, 0, sc, &c);
-    queryparse(argv[1], strlen(argv[1]), sc, &c);
+    if (argc == 1) {
+        printf("query parser test\nusage: test <query>\n");
+        return 1;
+    }
+    else {
+        queryparse(argv[1], strlen(argv[1]), sc, &c);
+    }
 
     for (size_t i = 0; i < (sc->size / sizeof(long)); i++) {
         printf("selected column %ld\n", ((long*)sc->buf)[i]);

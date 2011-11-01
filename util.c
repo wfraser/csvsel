@@ -26,6 +26,12 @@ void print_indent(size_t indent)
 
 void print_condition(compound* c, size_t indent)
 {
+    if (NULL == c) {
+        print_indent(indent);
+        printf("(null)\n");
+        return;
+    }
+
     switch (c->oper) {
     case OPER_SIMPLE:
         print_indent(indent);
