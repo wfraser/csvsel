@@ -44,8 +44,8 @@ WHITESPACE  [ \t\r\n]
                     query_lval.col = atoi(yytext + 1) - 1;
                     return TOK_COLUMN; 
                 }
-".num"          { return TOK_CONV_NUM; }
-".dbl"          { return TOK_CONV_DBL; }
+".int"          { return TOK_CONV_NUM; }
+".float"        { return TOK_CONV_DBL; }
 \%%             {
                     query_lval.special = SPECIAL_NUMCOLS;
                     return TOK_SPECIAL;

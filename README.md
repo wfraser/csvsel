@@ -20,7 +20,7 @@ Query Language
     columns: column[ - columns]     (range of columns)
                                     (these can be mixed)
 
-    column: %<digits>[(.dbl | .num)]
+    column: %<digits>[(.float | .int)]
 
     conditions: [(] [not] <condition> [ (and|or) <conditions ] [)]
 
@@ -37,9 +37,9 @@ Query Language
 Notes
 -----
 
-Values have types, either string, integer ("num"), or floating-point ("dbl").
+Values have types, either string, integer ("int"), or floating-point ("float").
 
-Columns are automatically string type, unless you add ".dbl" or ".num" after them.
+Columns are automatically string type, unless you add ".int" or ".float" after them.
 
 The special values %# and %% are integers.
 
@@ -48,10 +48,10 @@ Constant numbers are integers unless they have a decimal point in them, in which
 Comparisons are done as follows:
 
 * string vs string: ordinal string comparison
-* string vs dbl: string is parsed to double, then numeric comparison
-* string vs num: string is parsed to long, then numeric comparison
-* dbl vs num: num is upgraded to a dbl, then numeric comparison
-* dbl vs dbl, and num vs num: numeric comparison
+* string vs float: string is parsed to double, then numeric comparison
+* string vs int: string is parsed to int (long), then numeric comparison
+* float vs int: int is upgraded to a float (double-precision), then numeric comparison
+* float vs float, and int vs int: numeric comparison
 
 If a string to double or string to long conversion fails, the numeric value of the string is zero.
 
@@ -64,7 +64,7 @@ Print the first column of any row where the second and third columns are equal (
 
 Print the first column of any row where the second column (as a floating point number) is greater than 25.5:
 
-    select %1 where %2.dbl > 25.5
+    select %1 where %2.float > 25.5
 
 Print all the columns of rows 25 through 42:
 
