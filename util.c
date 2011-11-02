@@ -4,7 +4,7 @@
 #include "queryparse.h"
 #include "queryparse.tab.h"
 
-void print_rval(rval r)
+void print_val(val r)
 {
     if (r.is_num) {
         printf("number: %ld", r.num);
@@ -14,6 +14,20 @@ void print_rval(rval r)
     }
     if (r.is_col) {
         printf("column: %zu", r.col);
+    }
+    if (r.is_special) {
+        printf("special: ");
+        switch (r.special) {
+        case SPECIAL_NUMCOLS:
+            printf("<number of columns>");
+            break;
+        case SPECIAL_ROWNUM:
+            printf("<row number>");
+            break;
+        default:
+            printf("<unknown special value!!>");
+            break;
+        }
     }
 }
 
@@ -35,25 +49,8 @@ void print_condition(compound* c, size_t indent)
     switch (c->oper) {
     case OPER_SIMPLE:
         print_indent(indent);
-        if (c->simple.lval.is_col) {
-            printf("column %zu ", c->simple.lval.col);
-        }
-        else if (c->simple.lval.is_special) {
-            switch (c->simple.lval.special) {
-            case SPECIAL_NUMCOLS:
-                printf("<number of columns> ");
-                break;
-            case SPECIAL_ROWNUM:
-                printf("<row number> ");
-                break;
-            default:
-                printf("<unknown special value!!> ");
-                break;
-            }
-        }
-        else {
-            printf("<wtf value!!!!!!!> ");
-        }
+        print_val(c->simple.left);
+        printf(" ");
 
         switch (c->simple.oper) {
         case TOK_EQ:
@@ -73,7 +70,7 @@ void print_condition(compound* c, size_t indent)
             break;
         }
         printf(" ");
-        print_rval(c->simple.rval);
+        print_val(c->simple.right);
         printf("\n");
         break;
     case OPER_NOT:

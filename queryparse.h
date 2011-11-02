@@ -16,31 +16,23 @@ typedef struct
 {
     union {
         long          num;
+        double        dbl;
         char*         str;
         size_t        col;
         special_value special;
     };
     bool is_num;
+    bool is_dbl;
     bool is_str;
     bool is_col;
     bool is_special;
-} rval;
+} val;
 
 typedef struct
 {
-    union {
-        size_t        col;
-        special_value special;
-    };
-    bool is_col;
-    bool is_special;
-} lval;
-
-typedef struct
-{
-    int  oper;
-    lval lval;
-    rval rval;
+    int oper;
+    val left;
+    val right;
 } condition;
 
 typedef struct _compound

@@ -1,3 +1,9 @@
+/*
+ * CSV Selector
+ *
+ * by William R. Fraser, 10/22/2011
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -15,18 +21,6 @@
 #define DEBUG if (false)
 
 extern int query_debug;
-
-bool string_is_num(const char* string)
-{
-    size_t len = strlen(string);
-    for (size_t i = 0; i < len; i++) {
-        if (string[i] > '9' || string[i] < '0') {
-            return false;
-        }
-    }
-
-    return true;
-}
 
 void print_selected_columns(growbuf* fields, growbuf* selected_columns)
 {
@@ -67,6 +61,39 @@ void print_selected_columns(growbuf* fields, growbuf* selected_columns)
     }
 }
 
+void value_to_const(val* val, growbuf* fields, size_t rownum)
+{
+    if (val->is_col) {
+        val->str = (char*)((growbuf**)fields->buf)[val->col]->buf;
+    
+        if (val->is_num) {
+            val->num = atol(val->str);
+        }
+        else if (val->is_dbl) {
+            val->dbl = strtod(val->str, NULL);
+        }
+        else {
+            val->is_str = true;
+        }
+
+        val->is_col = false;
+    }
+    else if (val->is_special) {
+        switch (val->special) {
+        case SPECIAL_NUMCOLS:
+            val->num = fields->size / sizeof(void*);
+            val->is_num = true;
+            val->is_special = false;
+            break;
+        case SPECIAL_ROWNUM:
+            val->num = rownum;
+            val->is_num = true;
+            val->is_special = false;
+            break;
+        }
+    }
+}
+
 bool query_evaluate(growbuf* fields, compound* condition, size_t rownum)
 {
     bool retval = true;
@@ -79,80 +106,42 @@ bool query_evaluate(growbuf* fields, compound* condition, size_t rownum)
     switch (condition->oper) {
     case OPER_SIMPLE:
         {
-            char*  check_field_str = NULL;
-            long   check_field_num = 0;
-            bool   numeric_comparison = false;
+            val left = condition->simple.left;
+            val right = condition->simple.right;
 
-            if (condition->simple.lval.is_col) {
+            value_to_const(&left,  fields, rownum);
+            value_to_const(&right, fields, rownum);
 
-                if (fields->size / sizeof(void*) < condition->simple.lval.col) {
-                    fprintf(stderr, "invalid column %zu, there are only %zu present.\n",
-                            condition->simple.lval.col,
-                            fields->size / sizeof(void*));
-                    retval = false;
-                    goto cleanup;
-                }
-
-                check_field_str = ((growbuf**)(fields->buf))[condition->simple.lval.col]->buf;
-
-            }
-            if (condition->simple.lval.is_special) {
-                switch (condition->simple.lval.special) {
-                case SPECIAL_NUMCOLS:
-                    check_field_num = fields->size / sizeof(void*);
-                    numeric_comparison = true;
-                    break;
-                case SPECIAL_ROWNUM:
-                    check_field_num = rownum;
-                    numeric_comparison = true;
-                    break;
-                default:
-                    fprintf(stderr, "unknown special value\n");
-                    retval = false;
-                    goto cleanup;
-                }
-            }
-
-            char* rval_str = NULL;
-
-            if (condition->simple.rval.is_num) {
-                if (!numeric_comparison) {
-                    if (string_is_num(check_field_str)) {
-                        check_field_num = atoi(check_field_str);
-                        numeric_comparison = true;
-                    }
-                    else {
-                        retval = false;
-                        break;
-                    }
-                }
-            }
-            else {
-                if (condition->simple.rval.is_col) {
-                    if (fields->size / sizeof(void*) < condition->simple.rval.col) {
-                        fprintf(stderr, "invalid column %zu, there are only %zu present.\n",
-                                condition->simple.rval.col,
-                                fields->size / sizeof(void*));
-                        retval = false;
-                        goto cleanup;
-                    }
-                    DEBUG fprintf(stderr, "comparing to column %zu\n",
-                            condition->simple.rval.col);
-
-                    rval_str = ((growbuf**)(fields->buf))[condition->simple.rval.col]->buf;
-                    DEBUG fprintf(stderr, "rval(%s)\n", rval_str);
-                }
-                else {
-                    rval_str = condition->simple.rval.str;
-                }
-            }
+#define CONVERSION(a, b) \
+    if (b.is_dbl) { \
+        if (a.is_str) { \
+            a.dbl = strtod(a.str, NULL); \
+            a.is_dbl = true; \
+            a.is_num = false; \
+        } \
+        else if (a.is_num) { \
+            a.dbl = (double)a.num; \
+            a.is_dbl = true; \
+            a.is_num = false; \
+        } \
+    } \
+    else if (b.is_num && a.is_str) { \
+        a.num = atol(a.str); \
+        a.is_num = true; \
+        a.is_str = false; \
+    }
+            
+            CONVERSION(left, right);
+            CONVERSION(right, left);
 
 #define COMPARE(operator) \
-    if (numeric_comparison) { \
-        retval = (check_field_num operator condition->simple.rval.num); \
+    if (left.is_dbl) { \
+        retval = (left.dbl operator right.dbl); \
+    } else if (left.is_num) { \
+        retval = (left.num operator right.num); \
     } \
     else { \
-        retval = (strcmp(check_field_str, rval_str) operator 0); \
+        retval = (strcmp(left.str, right.str) operator 0); \
     } \
 
             switch (condition->simple.oper) {
@@ -283,8 +272,13 @@ int csv_select(FILE* input, const char* query, size_t query_length)
                     );
                 }
 
-                if (query_evaluate(fields, root_condition, rownum)) {
-                    print_selected_columns(fields, selected_columns);
+                if (fields->size / sizeof(void*) > 0
+                        && (fields->size / sizeof(void*) > 1
+                            || ((growbuf**)fields->buf)[0]->size > 0))
+                {
+                    if (query_evaluate(fields, root_condition, rownum)) {
+                        print_selected_columns(fields, selected_columns);
+                    }
                 }
 
                 for (size_t i = 0; i < fields->size / sizeof(void*); i++) {
@@ -337,9 +331,8 @@ int csv_select(FILE* input, const char* query, size_t query_length)
 handle_eof:
 
     if (fields->size / sizeof(void*) > 0
-            && (fields->size / sizeof(void*) == 1 
-                ? ((growbuf**)fields->buf)[0]->size > 0
-                : false))
+            && ((fields->size / sizeof(void*) > 1 
+                 || ((growbuf**)fields->buf)[0]->size > 0)))
     {
         if (query_evaluate(fields, root_condition, rownum)) {
             print_selected_columns(fields, selected_columns);

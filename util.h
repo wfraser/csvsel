@@ -3,7 +3,7 @@
 
 #include "queryparse.h"
 
-void print_rval(rval r);
+void print_val(val v);
 void print_indent(size_t indent);
 void print_condition(compound* c, size_t indent);
 

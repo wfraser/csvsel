@@ -74,8 +74,11 @@ compound* new_compound()
 void free_compound(compound* c)
 {
     if (NULL != c) {
-        if (c->simple.rval.is_str && NULL != c->simple.rval.str) {
-            free(c->simple.rval.str);
+        if (c->simple.right.is_str && NULL != c->simple.right.str) {
+            free(c->simple.right.str);
+        }
+        if (c->simple.left.is_str && NULL != c->simple.left.str) {
+            free(c->simple.left.str);
         }
         compound* l = c->left;
         compound* r = c->right;
@@ -94,21 +97,19 @@ void free_compound(compound* c)
     char*         str;
     size_t        col;
     special_value special;
-    rval          rval;
-    lval          lval;
+    val           val;
     compound*     compound;
     condition     simple;
 }
 
-%token TOK_SELECT TOK_WHERE TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_DASH TOK_ERROR
+%token TOK_SELECT TOK_WHERE TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_DASH TOK_CONV_NUM TOK_CONV_DBL TOK_ERROR
 
 %token <num> TOK_NUMBER
 %token <col> TOK_COLUMN
 %token <str> TOK_STRING
 %token <special> TOK_SPECIAL
 
-%type <lval> Lvalue
-%type <rval> Rvalue
+%type <val> Value
 %type <compound> Compound
 %type <simple> Simple
 %type <num> Operator
@@ -150,10 +151,10 @@ Conditions
 ;
 
 Simple
-    : Lvalue Operator Rvalue {
-        $$.lval = $1;
+    : Value Operator Value {
+        $$.left = $1;
         $$.oper = $2;
-        $$.rval = $3;
+        $$.right = $3;
     }
 ;
 
@@ -206,10 +207,20 @@ Operator
     }
 ;
 
-Rvalue
+Value
     : TOK_COLUMN {
         $$.col = $1;
         $$.is_col = true;
+    }
+    | TOK_COLUMN TOK_CONV_NUM {
+        $$.col = $1;
+        $$.is_col = true;
+        $$.is_num = true;
+    }
+    | TOK_COLUMN TOK_CONV_DBL {
+        $$.col = $1;
+        $$.is_col = $1;
+        $$.is_dbl = true;
     }
     | TOK_STRING {
         $$.str = $1;
@@ -218,13 +229,6 @@ Rvalue
     | TOK_NUMBER {
         $$.num = $1;
         $$.is_num = true;
-    }
-;
-
-Lvalue
-    : TOK_COLUMN {
-        $$.col = $1;
-        $$.is_col = true;
     }
     | TOK_SPECIAL {
         $$.special = $1;
