@@ -1,3 +1,9 @@
+/*
+ * CSV Selector
+ *
+ * by William R. Fraser, 10/22/2011
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
