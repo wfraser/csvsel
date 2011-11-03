@@ -18,7 +18,8 @@ growbuf* string_buf = NULL;
 %option noyywrap
 
 COLUMN          %[0-9]+
-NUMBER          -?[0-9]+
+INTEGER         -?[0-9]+
+FLOAT           -?[0-9]+\.[0-9]*
 WHITESPACE      [ \t\r\n]
 IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_-]+
 
@@ -63,9 +64,14 @@ IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_-]+
                     return TOK_SPECIAL;
                 }
 
-{NUMBER}        { 
+{INTEGER}       { 
                     query_lval.num = atoi(yytext);
-                    return TOK_NUMBER; 
+                    return TOK_INTEGER; 
+                }
+
+{FLOAT}         {
+                    query_lval.dbl = strtod(yytext, NULL);
+                    return TOK_FLOAT;
                 }
 
 {IDENTIFIER}    {

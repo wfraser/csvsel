@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include "growbuf.h"
+#include "util.h"
 
 #include "queryparse.h"
 
@@ -125,6 +126,7 @@ bool check_function(func* f)
 
 %union {
     long          num;
+    double        dbl;
     char*         str;
     size_t        col;
     special_value special;
@@ -137,7 +139,8 @@ bool check_function(func* f)
 
 %token TOK_SELECT TOK_WHERE TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_DASH TOK_CONV_NUM TOK_CONV_DBL TOK_CONV_STR TOK_ERROR
 
-%token <num> TOK_NUMBER
+%token <num> TOK_INTEGER
+%token <dbl> TOK_FLOAT
 %token <col> TOK_COLUMN
 %token <str> TOK_STRING
 %token <str> TOK_IDENTIFIER
@@ -265,7 +268,7 @@ Function
         $$.arg1 = $3;
         $$.arg2 = $5;
         $$.num_args = 2;
-        
+
         if (!check_function(&$$)) {
             YYERROR;
         }
@@ -341,11 +344,17 @@ Value_Base
         $$.is_str = true;
         $$.conversion_type = TYPE_STRING;
     }
-    | TOK_NUMBER {  
+    | TOK_INTEGER {  
         value_clear(&$$);
         $$.num = $1;
         $$.is_num = true;
         $$.conversion_type = TYPE_LONG;
+    }
+    | TOK_FLOAT {
+        value_clear(&$$);
+        $$.dbl = $1;
+        $$.is_dbl = true;
+        $$.conversion_type = TYPE_DOUBLE;
     }
     | TOK_SPECIAL {
         value_clear(&$$);

@@ -8,12 +8,6 @@ void print_val(val r)
 {
     if (r.is_col) {
         printf("column: %zu", r.col);
-        if (r.is_num) {
-            printf(" as int");
-        }
-        if (r.is_dbl) {
-            printf(" as float");
-        }
     }
     else if (r.is_num) {
         printf("int: %ld", r.num);
@@ -66,6 +60,20 @@ void print_val(val r)
             }
             printf(")");
         }
+    }
+
+    switch (r.conversion_type) {
+    case TYPE_STRING:
+        printf(" as string");
+        break;
+    case TYPE_LONG:
+        printf(" as int");
+        break;
+    case TYPE_DOUBLE:
+        printf(" as float");
+        break;
+    default:
+        printf(" as <unknown type!!>");
     }
 }
 

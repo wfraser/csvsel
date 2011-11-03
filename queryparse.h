@@ -20,7 +20,7 @@ typedef enum {
 
 struct _func;
 
-typedef struct {
+typedef struct _val {
     union {
         long          num;
         double        dbl;
