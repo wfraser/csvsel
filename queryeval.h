@@ -14,6 +14,6 @@
 
 val value_evaluate(const val* val, growbuf* fields, size_t rownum);
 
-bool query_evaluate(growbuf* fields, compound* condition, size_t rownum);
+bool query_evaluate(growbuf* fields, size_t rownum, compound* condition);
 
 #endif //QUERYEVAL_H

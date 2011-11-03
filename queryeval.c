@@ -139,7 +139,7 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
     return ret;
 }
 
-bool query_evaluate(growbuf* fields, compound* condition, size_t rownum)
+bool query_evaluate(growbuf* fields, size_t rownum, compound* condition)
 {
     bool retval = true;
 
@@ -250,15 +250,15 @@ bool query_evaluate(growbuf* fields, compound* condition, size_t rownum)
         break;
 
     case OPER_NOT:
-        retval = ! query_evaluate(fields, condition->left, rownum);
+        retval = ! query_evaluate(fields, rownum, condition->left);
         break;
 
     case OPER_AND:
-        retval = (query_evaluate(fields, condition->left, rownum) && query_evaluate(fields, condition->right, rownum));
+        retval = (query_evaluate(fields, rownum, condition->left) && query_evaluate(fields, rownum, condition->right));
         break;
 
     case OPER_OR:
-        retval = (query_evaluate(fields, condition->left, rownum) || query_evaluate(fields, condition->right, rownum));
+        retval = (query_evaluate(fields, rownum, condition->left) || query_evaluate(fields, rownum, condition->right));
         break;
     }
 

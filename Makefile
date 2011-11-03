@@ -4,9 +4,9 @@ LFLAGS=-d
 
 all: csvsel
 
-csvsel: main.o growbuf.o csvformat.o queryeval.o queryparse.tab.o querylex.tab.o util.o
+csvsel: csvsel.o growbuf.o csvformat.o queryeval.o queryparse.tab.o querylex.tab.o util.o
 
-csvsel.o: queryparse.tab.h
+queryeval.o: queryparse.tab.h
 
 queryparse.tab.c: queryparse.y
 	bison $(YFLAGS) -p query_ --defines=queryparse.tab.h queryparse.y

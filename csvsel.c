@@ -14,11 +14,67 @@
 
 #include "growbuf.h"
 #include "csvformat.h"
+#include "queryeval.h"
+#include "util.h"
 
 #define DEBUG if (false)
 //#define DEBUG
 
 int query_debug = 0;
+
+typedef struct {
+    compound* root_condition;
+    growbuf*  selected_columns;
+} row_evaluator_args;
+
+void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
+{
+    if (query_evaluate(fields, rownum, args->root_condition)) {
+        print_selected_columns(fields, args->selected_columns);
+    }
+}
+
+int csv_select(FILE* input, const char* query, size_t query_len)
+{
+    int retval = 0;
+
+    growbuf* selected_columns = NULL;
+    compound* root_condition = NULL;
+
+    selected_columns = growbuf_create(1);
+    if (NULL == selected_columns) {
+        fprintf(stderr, "malloc failed\n");
+        retval = 2;
+        goto cleanup;
+    }
+
+    if (0 != queryparse(query, query_len, selected_columns, &root_condition))
+    {
+        retval = 1;
+        goto cleanup;
+    }
+
+    if (query_debug)
+    {
+        fprintf(stderr, "condition:\n");
+        print_condition(root_condition, 0);
+    }
+    
+    row_evaluator_args args = { root_condition, selected_columns };
+    
+    retval = read_csv(input, (row_evaluator)&eval_and_print, (void*)&args);
+    
+cleanup:
+    if (NULL != selected_columns) {
+        growbuf_free(selected_columns);
+    }
+    
+    if (NULL != root_condition) {
+        free_compound(root_condition);
+    }
+
+    return retval;
+}
 
 int main(int argc, char** argv)
 {
