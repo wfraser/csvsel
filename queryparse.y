@@ -122,7 +122,7 @@ bool check_function(func* f)
 
     for (size_t i = 0; i < f->num_args; i++) {
         bool ok = false;
-        for (size_t j = 0; j < spec.arguments[i].num_types; i++) {
+        for (size_t j = 0; j < spec.arguments[i].num_types; j++) {
             if (f->args[i].conversion_type == spec.arguments[i].types[j]) {
                 ok = true;
                 break;
