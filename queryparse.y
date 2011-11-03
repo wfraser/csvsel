@@ -13,6 +13,7 @@
 #include <errno.h>
 #include "growbuf.h"
 #include "util.h"
+#include "functions.h"
 
 #include "queryparse.h"
 
@@ -25,6 +26,8 @@ extern FILE* query_in;
 static int query_parse(void);
 extern int query_lex();
 static void query_error();
+
+extern functionspec FUNCTIONS[];
 
 int queryparse(const char* query, size_t query_length, growbuf* selected_columns, compound** root_condition)
 {
@@ -98,25 +101,74 @@ void value_clear(val* v)
 
 bool check_function(func* f)
 {
-    switch (f->func) {
-    case FUNC_SUBSTR:
-        if (f->num_args != 2 && f->num_args != 3) {
-            fprintf(stderr, "Error: substr() needs 2 or 3 arguments.\n");
+    functionspec spec = FUNCTIONS[f->func];
+
+    if (f->num_args > spec.num_args || f->num_args < spec.min_args) {
+        if (spec.num_args == spec.min_args) {
+            fprintf(stderr, "Error: %s() needs %zu arguments (%zu given).\n",
+                    spec.name,
+                    spec.num_args,
+                    f->num_args);
+        }
+        else {
+            fprintf(stderr, "Error: %s() needs between %zu and %zu arguments (%zu given).\n",
+                    spec.name,
+                    spec.min_args,
+                    spec.num_args,
+                    f->num_args);
+        }
+        return false;
+    }
+
+    for (size_t i = 0; i < f->num_args; i++) {
+        bool ok = false;
+        for (size_t j = 0; j < spec.arguments[i].num_types; i++) {
+            if (f->args[i].conversion_type == spec.arguments[i].types[j]) {
+                ok = true;
+                break;
+            }
+        }
+
+        if (!ok) {
+            fprintf(stderr, "Error: argument %zu of %s() must be of type ",
+                    i,
+                    spec.name);
+            for (size_t j = 0; j < spec.arguments[i].num_types; j++) {
+                switch (spec.arguments[i].types[j]) {
+                case TYPE_STRING:
+                    fprintf(stderr, "string");
+                    break;
+                case TYPE_DOUBLE:
+                    fprintf(stderr, "float");
+                    break;
+                case TYPE_LONG:
+                    fprintf(stderr, "integer");
+                    break;
+                }
+                
+                if (j > 0 && j + 1 == spec.arguments[i].num_types) {
+                    fprintf(stderr, ", or ");
+                }
+                else {
+                    fprintf(stderr, ", ");
+                }
+            }
+
+            fprintf(stderr, "not ");
+            switch (f->args[i].conversion_type) {
+            case TYPE_STRING:
+                fprintf(stderr, "string");
+                break;
+            case TYPE_DOUBLE:
+                fprintf(stderr, "float");
+                break;
+            case TYPE_LONG:
+                fprintf(stderr, "integer");
+                break;
+            }
+
             return false;
         }
-        if (f->arg1.conversion_type != TYPE_STRING) {
-            fprintf(stderr, "Error: arg 1 of substr() is wrong type.\n");
-            return false;
-        }
-        if (f->arg2.conversion_type != TYPE_LONG) {
-            fprintf(stderr, "Error: arg 2 of substr() is wrong type.\n");
-            return false;
-        }
-        if (f->arg3.conversion_type != TYPE_LONG) {
-            fprintf(stderr, "Error: arg 3 of substr() is wrong type.\n");
-            return false;
-        }
-        break;
     }
 
     return true;
@@ -231,10 +283,16 @@ Function_Identifier
     : TOK_IDENTIFIER {
         memset(&$$, 0, sizeof(func));
 
-        if (strcmp($1, "substr") == 0) {
-            $$.func = FUNC_SUBSTR;
+        bool found = false;
+        for (size_t i = 0; i < MAX_FUNC; i++) {
+            if (strcmp($1, FUNCTIONS[i].name) == 0) {
+                $$.func = i;
+                found = true;
+                break;
+            }
         }
-        else {
+
+        if (!found) {
             fprintf(stderr, "Parse error: unknown function \"%s\"\n", $1);
             YYERROR;
         }
@@ -255,7 +313,7 @@ Function
     }
     | Function_Identifier TOK_LPAREN Value TOK_RPAREN {
         $$ = $1;
-        $$.arg1 = $3;
+        $$.args[0] = $3;
         $$.num_args = 1;
 
         if (!check_function(&$$)) {
@@ -265,8 +323,8 @@ Function
     }
     | Function_Identifier TOK_LPAREN Value TOK_COMMA Value TOK_RPAREN {
         $$ = $1;
-        $$.arg1 = $3;
-        $$.arg2 = $5;
+        $$.args[0] = $3;
+        $$.args[1] = $5;
         $$.num_args = 2;
 
         if (!check_function(&$$)) {
@@ -276,9 +334,9 @@ Function
     }
     | Function_Identifier TOK_LPAREN Value TOK_COMMA Value TOK_COMMA Value TOK_RPAREN {
         $$ = $1;
-        $$.arg1 = $3;
-        $$.arg2 = $5;
-        $$.arg3 = $7;
+        $$.args[0] = $3;
+        $$.args[1] = $5;
+        $$.args[2] = $7;
         $$.num_args = 3;
 
         if (!check_function(&$$)) {
@@ -368,11 +426,7 @@ Value_Base
         memcpy($$.func, &$1, sizeof(func));
         $$.is_func = true;
 
-        switch ($$.func->func) {
-        case FUNC_SUBSTR:
-            $$.conversion_type = TYPE_STRING;
-            break;
-        }
+        $$.conversion_type = FUNCTIONS[$$.func->func].return_type;
     }
 ;
 

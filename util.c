@@ -3,6 +3,9 @@
 #include "growbuf.h"
 #include "queryparse.h"
 #include "queryparse.tab.h"
+#include "functions.h"
+
+extern functionspec FUNCTIONS[];
 
 void print_val(val r)
 {
@@ -38,25 +41,18 @@ void print_val(val r)
             printf("NULL");
         }
         else {
-            switch (r.func->func) {
-            case FUNC_SUBSTR:
-                printf("substr");
-                break;
-            default:
+            if (r.func->func >= MAX_FUNC) {
                 printf("<unknown function!!>");
-                break;
+            }
+            else {
+                printf("%s", FUNCTIONS[r.func->func].name);
             }
             printf("(");
-            if (r.func->num_args > 0) {
-                print_val(r.func->arg1);
-            }
-            if (r.func->num_args > 1) {
-                printf(", ");
-                print_val(r.func->arg2);
-            }
-            if (r.func->num_args > 2) {
-                printf(", ");
-                print_val(r.func->arg3);
+            for (size_t i = 0; i < r.func->num_args; i++) {
+                print_val(r.func->args[i]);
+                if (i+1 != r.func->num_args) {
+                    printf(", ");
+                }
             }
             printf(")");
         }

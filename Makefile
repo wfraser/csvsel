@@ -4,7 +4,7 @@ LFLAGS=-d
 
 all: csvsel
 
-csvsel: csvsel.o growbuf.o csvformat.o queryeval.o queryparse.tab.o querylex.tab.o util.o
+csvsel: csvsel.o growbuf.o csvformat.o queryeval.o queryparse.tab.o querylex.tab.o util.o functions.o
 
 queryeval.o: queryparse.tab.h
 
@@ -16,7 +16,7 @@ queryparse.tab.h: queryparse.tab.c
 querylex.tab.c: querylex.l
 	flex -P query_ -o querylex.tab.c querylex.l
 
-test: test.o queryparse.tab.o querylex.tab.o growbuf.o util.o
+test: test.o queryparse.tab.o querylex.tab.o growbuf.o util.o functions.o
 
 test.o: queryparse.tab.h
 

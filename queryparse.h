@@ -11,7 +11,9 @@ typedef enum {
 } special_value;
 
 typedef enum {
-    FUNC_SUBSTR
+    FUNC_SUBSTR,
+    FUNC_STRLEN,
+    MAX_FUNC
 } function;
 
 typedef enum {
@@ -39,9 +41,7 @@ typedef struct _val {
 } val;
 
 typedef struct _func {
-    val arg1;
-    val arg2;
-    val arg3;
+    val args[3];
     size_t num_args;
     function func;
     char* func_str;

@@ -14,11 +14,14 @@
 #include "queryparse.h"
 #include "queryparse.tab.h"
 #include "util.h"
+#include "functions.h"
 
 //#define DEBUG
 #define DEBUG if (false)
 
 extern int query_debug;
+
+extern functionspec FUNCTIONS[];
 
 /**
  * Evaluates a val to a constant.
@@ -53,41 +56,45 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
         }
     }
     else if (val->is_func) {
+        struct _val args[MAX_ARGS];
+        for (size_t i = 0; i < val->func->num_args; i++) {
+            args[i] = value_evaluate(&(val->func->args[i]), fields, rownum);
+        }
+
         switch (val->func->func) {
         case FUNC_SUBSTR:
             {
-                struct _val arg1 = value_evaluate(
-                                        &(val->func->arg1), fields, rownum);
-                struct _val arg2 = value_evaluate(
-                                        &(val->func->arg2), fields, rownum);
-
-                struct _val arg3 = {};
-                if (val->func->num_args > 2) {
-                    arg3 = value_evaluate(
-                                        &(val->func->arg3), fields, rownum);
-                }
-                else {
-                    arg3.num = -1;
-                    arg3.is_num = true;
+                if (val->func->num_args == 2) {
+                    args[2].num = -1;
+                    args[2].is_num = true;
                 }
 
-                if (arg3.num < 0) {
-                    arg3.num += strlen(arg1.str) + 1;
+                if (args[2].num < 0) {
+                    args[2].num += strlen(args[0].str) + 1;
                 }
 
-                size_t start = arg2.num;
-                size_t len = arg3.num;
+                size_t start = args[1].num;
+                size_t len = args[2].num;
                 size_t size = len - start;
                 char* result = (char*)malloc(size + 1);
-                memcpy(result, arg1.str + start, size);
+                memcpy(result, args[0].str + start, size);
                 result[size] = '\0';
 
                 ret.str = result;
                 ret.is_str = true;
             }
             break;
+
+        case FUNC_STRLEN:
+            {
+                ret.num = strlen(args[0].str);
+                ret.is_num = true;
+            }
+            break;
+
         default:
-            fprintf(stderr, "ERROR: unknown function to evaluate!!\n");
+            fprintf(stderr, "ERROR: no implementation for function %s\n",
+                    FUNCTIONS[val->func->func].name);
         }
     }
 
