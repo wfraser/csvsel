@@ -11,7 +11,3 @@ TODO:
         - clean these up
     - the val.is_foo bools are icky; should be an enum instead
 
-- layout/organization
-    - csvsel.c has a ton of stuff in it.
-        - split it up into csvformat.c and queryeval.c
-
