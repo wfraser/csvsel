@@ -32,6 +32,38 @@ functionspec FUNCTIONS[] = {
                 .types = { TYPE_STRING }
             }
         }
+    },
+    {
+        .name = "max",
+        .return_type = TYPE_DOUBLE,
+        .num_args = 2,
+        .min_args = 2,
+        .arguments = {
+            {
+                .num_types = 2,
+                .types = { TYPE_LONG, TYPE_DOUBLE }
+            },
+            {
+                .num_types = 2,
+                .types = { TYPE_LONG, TYPE_DOUBLE }
+            },
+        }
+    },
+    {
+        .name = "min",
+        .return_type = TYPE_DOUBLE,
+        .num_args = 2,
+        .min_args = 2,
+        .arguments = {
+            {
+                .num_types = 2,
+                .types = { TYPE_LONG, TYPE_DOUBLE }
+            },
+            {
+                .num_types = 2,
+                .types = { TYPE_LONG, TYPE_DOUBLE }
+            }
+        }
     }
 };
 

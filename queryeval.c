@@ -92,6 +92,37 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
             }
             break;
 
+        case FUNC_MAX:
+        case FUNC_MIN:
+            {
+                double arg0;
+                double arg1;
+
+                if (args[0].is_dbl) {
+                    arg0 = args[0].dbl;
+                }
+                else if (args[0].is_num) {
+                    arg0 = (double)(args[0].num);
+                }
+
+                if (args[1].is_dbl) {
+                    arg1 = args[1].dbl;
+                }
+                else if (args[1].is_num) {
+                    arg1 = (double)(args[1].num);
+                }
+
+                if (val->func->func == FUNC_MAX) {
+                    ret.dbl = (arg0 > arg1) ? arg0 : arg1;
+                }
+                else {
+                    ret.dbl = (arg0 < arg1) ? arg0 : arg1;
+                }
+
+                ret.is_dbl = true;
+            }
+            break;
+
         default:
             fprintf(stderr, "ERROR: no implementation for function %s\n",
                     FUNCTIONS[val->func->func].name);

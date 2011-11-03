@@ -44,6 +44,9 @@ Functions
 * **`strlen`** ( string `s` ) -> int
     * returns the length of string `s`
 
+* **`min`** / **`max`** ( int|float `a`, int|float `b` ) -> float
+    * returns the smaller or bigger, respectively, of `a` and `b`, as a float.
+
 Notes
 -----
 

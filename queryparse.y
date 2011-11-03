@@ -166,6 +166,7 @@ bool check_function(func* f)
                 fprintf(stderr, "integer");
                 break;
             }
+            fprintf(stderr, "\n");
 
             return false;
         }
