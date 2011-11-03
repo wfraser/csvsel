@@ -20,19 +20,29 @@ Query Language
     columns: column[ - columns]     (range of columns)
                                     (these can be mixed)
 
-    column: %<digits>[(.float | .int)]
+    column: %<digits>
 
     conditions: [(] [not] <condition> [ (and|or) <conditions ] [)]
 
     condition: <value> <operator> <value>
 
-    value: (<column> | <special> | "string" | number)
+    value: (<column> | <special> | "string" | number | <function>(value, ...) )[(.float | .int | .string)]
 
     operator: (= | != | < | > | <= | >= )
 
     special:
         %#  (number of the current row, 0-based)
         %%  (total number of columns in the current row)
+
+Functions
+---------
+
+* **`substr`** ( string `s`, int `start`, int `length` *(default -1)* ) -> string
+    * returns the substring of `s` starting at `start`, and of length `length`
+    * if `length` is negative, it counts from the end of the string. -1 means "to the end of the string".
+
+* **`strlen`** ( string `s` ) -> int
+    * returns the length of string `s`
 
 Notes
 -----
@@ -45,12 +55,16 @@ The special values %# and %% are integers.
 
 Constant numbers are integers unless they have a decimal point in them, in which case they are floating-point.
 
-Comparisons are done as follows:
+Functions return different types depending on the function.
 
-* string vs string: ordinal string comparison
+Any value can be converted to another type by adding ".int", ".float", or ".string" after it.
+
+When doing the comparisons, automatic type promotions are done as follows:
+
+* string vs string: ordinal string comparison (no promotion)
 * string vs float: string is parsed to double, then numeric comparison
-* string vs int: string is parsed to int (long), then numeric comparison
-* float vs int: int is upgraded to a float (double-precision), then numeric comparison
+* string vs int: if the string contains a dot, string is parsed to double, otherwise string is parsed to int (long), then numeric comparison
+* float vs int: int is upgraded to a double, then numeric comparison
 * float vs float, and int vs int: numeric comparison
 
 If a string to double or string to long conversion fails, the numeric value of the string is zero.
