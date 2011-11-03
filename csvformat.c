@@ -127,8 +127,8 @@ int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
                         && (fields->size / sizeof(void*) > 1
                             || ((growbuf**)fields->buf)[0]->size > 0))
                 {
-		    row_evaluator(fields, rownum, context);
-		}
+                    row_evaluator(fields, rownum, context);
+                }
 
                 for (size_t i = 0; i < fields->size / sizeof(void*); i++) {
                     growbuf_free(((growbuf**)(fields->buf))[i]);
