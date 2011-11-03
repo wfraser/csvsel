@@ -35,6 +35,3 @@ functionspec FUNCTIONS[] = {
     }
 };
 
-//bool check_function(func* f)
-//{
-    

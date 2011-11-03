@@ -1,10 +1,9 @@
 TODO:
 
 - functions
-    - extensibility: make it easier to specify new ones
-    - check_function() in queryparse.y is icky
     - the Function item in queryparse.y is icky, only allowing
         0,1,2,3-ary functions. Should allow n-ary functions.
+        - this requires more complex data structures to achieve
 
 - types
     - lots of mixing of num vs long vs integer, dbl vs float vs double
