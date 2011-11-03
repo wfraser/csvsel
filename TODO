@@ -1,0 +1,17 @@
+TODO:
+
+- functions
+    - extensibility: make it easier to specify new ones
+    - check_function() in queryparse.y is icky
+    - the Function item in queryparse.y is icky, only allowing
+        0,1,2,3-ary functions. Should allow n-ary functions.
+
+- types
+    - lots of mixing of num vs long vs integer, dbl vs float vs double
+        - clean these up
+    - the val.is_foo bools are icky; should be an enum instead
+
+- layout/organization
+    - csvsel.c has a ton of stuff in it.
+        - split it up into csvformat.c and queryeval.c
+
