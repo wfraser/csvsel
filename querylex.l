@@ -17,15 +17,17 @@ growbuf* string_buf = NULL;
 %option yylineno
 %option noyywrap
 
-COLUMN      %[0-9]+
-NUMBER      -?[0-9]+
-WHITESPACE  [ \t\r\n]
+COLUMN          %[0-9]+
+NUMBER          -?[0-9]+
+WHITESPACE      [ \t\r\n]
+IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_-]+
 
 %x STRING
 
 %%
 
 {WHITESPACE}    { /* do nothing */ }
+
 "select"        { return TOK_SELECT; }
 "where"         { return TOK_WHERE; }
 "="             { return TOK_EQ; }
@@ -40,25 +42,36 @@ WHITESPACE  [ \t\r\n]
 "("             { return TOK_LPAREN; }
 ")"             { return TOK_RPAREN; }
 "-"             { return TOK_DASH; }
+","             { return TOK_COMMA; }
+
+".int"          { return TOK_CONV_NUM; }
+".float"        { return TOK_CONV_DBL; }
+".string"       { return TOK_CONV_STR; }
+
 {COLUMN}        { 
                     query_lval.col = atoi(yytext + 1) - 1;
                     return TOK_COLUMN; 
                 }
-".int"          { return TOK_CONV_NUM; }
-".float"        { return TOK_CONV_DBL; }
+
 \%%             {
                     query_lval.special = SPECIAL_NUMCOLS;
                     return TOK_SPECIAL;
                 }
+
 %#              {
                     query_lval.special = SPECIAL_ROWNUM;
                     return TOK_SPECIAL;
                 }
+
 {NUMBER}        { 
                     query_lval.num = atoi(yytext);
                     return TOK_NUMBER; 
                 }
-","             { return TOK_COMMA; }
+
+{IDENTIFIER}    {
+                    query_lval.str = strdup(yytext);
+                    return TOK_IDENTIFIER;
+                }
 
 \"              { 
                     BEGIN(STRING);

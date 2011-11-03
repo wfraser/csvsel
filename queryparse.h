@@ -6,37 +6,54 @@
 #include <sysexits.h>
 #include "growbuf.h"
 
-typedef enum
-{
+typedef enum {
     SPECIAL_NUMCOLS, SPECIAL_ROWNUM
-}
-special_value;
+} special_value;
 
-typedef struct
-{
+typedef enum {
+    FUNC_SUBSTR
+} function;
+
+typedef enum {
+    TYPE_LONG, TYPE_DOUBLE, TYPE_STRING
+} type;
+
+struct _func;
+
+typedef struct {
     union {
         long          num;
         double        dbl;
         char*         str;
         size_t        col;
         special_value special;
+        struct _func* func;
     };
     bool is_num;
     bool is_dbl;
     bool is_str;
     bool is_col;
     bool is_special;
+    bool is_func;
+    type conversion_type;
 } val;
 
-typedef struct
-{
+typedef struct _func {
+    val arg1;
+    val arg2;
+    val arg3;
+    size_t num_args;
+    function func;
+    char* func_str;
+} func;
+
+typedef struct {
     int oper;
     val left;
     val right;
 } condition;
 
-typedef struct _compound
-{
+typedef struct _compound {
     struct _compound* left;
     struct _compound* right;
     condition simple;

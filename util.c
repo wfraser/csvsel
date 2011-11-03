@@ -6,16 +6,25 @@
 
 void print_val(val r)
 {
-    if (r.is_num) {
-        printf("number: %ld", r.num);
-    }
-    if (r.is_str) {
-        printf("str: %s", r.str);
-    }
     if (r.is_col) {
         printf("column: %zu", r.col);
+        if (r.is_num) {
+            printf(" as int");
+        }
+        if (r.is_dbl) {
+            printf(" as float");
+        }
     }
-    if (r.is_special) {
+    else if (r.is_num) {
+        printf("int: %ld", r.num);
+    }
+    else if (r.is_dbl) {
+        printf("float: %lf", r.dbl);
+    }
+    else if (r.is_str) {
+        printf("str: %s", r.str);
+    }
+    else if (r.is_special) {
         printf("special: ");
         switch (r.special) {
         case SPECIAL_NUMCOLS:
@@ -27,6 +36,35 @@ void print_val(val r)
         default:
             printf("<unknown special value!!>");
             break;
+        }
+    }
+    else if (r.is_func) {
+        printf("function: ");
+        if (r.func == NULL) {
+            printf("NULL");
+        }
+        else {
+            switch (r.func->func) {
+            case FUNC_SUBSTR:
+                printf("substr");
+                break;
+            default:
+                printf("<unknown function!!>");
+                break;
+            }
+            printf("(");
+            if (r.func->num_args > 0) {
+                print_val(r.func->arg1);
+            }
+            if (r.func->num_args > 1) {
+                printf(", ");
+                print_val(r.func->arg2);
+            }
+            if (r.func->num_args > 2) {
+                printf(", ");
+                print_val(r.func->arg3);
+            }
+            printf(")");
         }
     }
 }

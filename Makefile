@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Werror -Wno-unused-function -std=c99 -O0 -gstabs -D_POSIX_SOURCE
+CFLAGS=-Wall -Werror -Wno-unused-function -std=c99 -O0 -gstabs -D_POSIX_SOURCE -D_XOPEN_SOURCE=500
 YFLAGS=-t -v
 LFLAGS=-d
 

@@ -10,7 +10,7 @@ int query_debug = 1;
 int main(int argc, char** argv)
 {
     growbuf* sc = growbuf_create(1);
-    compound *c;
+    compound *c = NULL;
 
     //queryparse(NULL, 0, sc, &c);
     if (argc == 1) {
