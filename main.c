@@ -13,7 +13,7 @@
 #include <errno.h>
 
 #include "growbuf.h"
-#include "csvsel.h"
+#include "csvformat.h"
 
 #define DEBUG if (false)
 //#define DEBUG

@@ -4,7 +4,7 @@ LFLAGS=-d
 
 all: csvsel
 
-csvsel: main.o growbuf.o csvsel.o queryparse.tab.o querylex.tab.o util.o
+csvsel: main.o growbuf.o csvformat.o queryparse.tab.o querylex.tab.o util.o
 
 csvsel.o: queryparse.tab.h
 

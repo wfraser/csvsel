@@ -14,8 +14,9 @@
 #include "queryparse.h"
 #include "queryparse.tab.h"
 #include "util.h"
+#include "queryeval.h"
 
-#include "csvsel.h"
+#include "csvformat.h"
 
 //#define DEBUG
 #define DEBUG if (false)
