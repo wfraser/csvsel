@@ -97,7 +97,7 @@ int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
             }
             else if (field->size != 0) {
                 fprintf(stderr, "csv syntax error: unexpected double-quote in"
-                        " line %u field %u\n",
+                        " line %zu field %zu\n",
                         rownum,
                         fields->size / sizeof(void*));
                 retval = EX_DATAERR;
