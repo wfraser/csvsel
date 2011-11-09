@@ -18,15 +18,20 @@ int main(int argc, char** argv)
         return 1;
     }
     else {
-        queryparse(argv[1], strlen(argv[1]), sc, &c);
+        if (0 != queryparse(argv[1], strlen(argv[1]), sc, &c)) {
+            printf(">>> parse error(s)\n");
+        }
+        else {
+            printf(">>> parse ok\n");
+        }
     }
 
     for (size_t i = 0; i < (sc->size / sizeof(long)); i++) {
-        printf("selected column %ld\n", ((long*)sc->buf)[i]);
+        printf(">>> selected column %ld\n", ((long*)sc->buf)[i]);
     }
 
     if (NULL != c) {
-        printf("condition:\n");
+        printf(">>> condition:\n");
         print_condition(c, 0);
     }
 
