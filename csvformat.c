@@ -96,12 +96,7 @@ int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
                 }
             }
             else if (field->size != 0) {
-                fprintf(stderr, "csv syntax error: unexpected double-quote in"
-                        " line %zu field %zu\n",
-                        rownum,
-                        fields->size / sizeof(void*));
-                retval = EX_DATAERR;
-                goto cleanup;
+                growbuf_append(field, &c, 1);
             }
             else {
                 in_dquot = true;
@@ -165,8 +160,12 @@ int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
 
         default:
             if (in_dquot && prev_was_dquot) {
-                in_dquot = false;
-                // the field better end after this, or else badness.
+                fprintf(stderr, "csv format error: double-quoted field has "
+                        "trailing garbage. Line %zu, field %zu\n",
+                        rownum,
+                        fields->size / sizeof(void*));
+                retval = EX_DATAERR;
+                goto cleanup;
             }
             else {
                 growbuf_append(field, &c, 1);
@@ -178,7 +177,6 @@ int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
     } // while (true)
 
 handle_eof:
-
     if (fields->size / sizeof(void*) > 0
             && ((fields->size / sizeof(void*) > 1 
                  || ((growbuf**)fields->buf)[0]->size > 0)))
