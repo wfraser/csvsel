@@ -220,19 +220,27 @@ Start
 Columns
     : Columns TOK_COMMA Columnspec
     | Columnspec
+    | NoColumns
 ;
 
 Columnspec
     : TOK_COLUMN TOK_DASH TOK_COLUMN {
         for (size_t i = $1; i <= $3; i++) {
-            growbuf_append(SELECTED_COLUMNS, &i, sizeof(size_t));
+            if (!growbuf_contains(SELECTED_COLUMNS, i)) {
+                growbuf_append(SELECTED_COLUMNS, &i, sizeof(size_t));
+            }
         }
     }
     | TOK_COLUMN {
         size_t col = $1;
-        growbuf_append(SELECTED_COLUMNS, &col, sizeof(size_t));
+        if (!growbuf_contains(SELECTED_COLUMNS, col)) {
+            growbuf_append(SELECTED_COLUMNS, &col, sizeof(size_t));
+        }
     }
-    | { 
+;
+
+NoColumns
+    : { 
         size_t max = SIZE_MAX;
         growbuf_append(SELECTED_COLUMNS, &max, sizeof(size_t));
     }
