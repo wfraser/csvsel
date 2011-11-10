@@ -64,6 +64,16 @@ typedef struct _compound {
     } oper;
 } compound;
 
+typedef struct _selector {
+    union {
+        size_t column;
+        val value;
+    };
+    enum {
+        SELECTOR_COLUMN, SELECTOR_VALUE
+    } type;
+} selector;
+
 int queryparse(const char* query, size_t query_length, growbuf* selected_columns, compound** root_condition);
 
 void free_compound(compound* c);

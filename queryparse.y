@@ -17,7 +17,7 @@
 
 #include "queryparse.h"
 
-static growbuf* SELECTED_COLUMNS;
+static growbuf* SELECTORS;
 static compound** ROOT_CONDITION;
 
 extern int   query_debug;
@@ -29,11 +29,11 @@ static void query_error();
 
 extern functionspec FUNCTIONS[];
 
-int queryparse(const char* query, size_t query_length, growbuf* selected_columns, compound** root_condition)
+int queryparse(const char* query, size_t query_length, growbuf* selectors, compound** root_condition)
 {
     int fd[2];
 
-    SELECTED_COLUMNS = selected_columns;
+    SELECTORS = selectors;
     ROOT_CONDITION = root_condition;
 
     //TODO: need to feed the query string to the bison parser.
@@ -175,6 +175,19 @@ bool check_function(func* f)
     return true;
 }
 
+bool column_selected(growbuf* selectors, size_t column)
+{
+    for (size_t i = 0; i < selectors->size / sizeof(void*); i++) {
+        selector* s = ((selector**)(selectors->buf))[i];
+        if (s->type == SELECTOR_COLUMN
+                && s->column == column) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 %}
 
 %union {
@@ -213,36 +226,57 @@ bool check_function(func* f)
 %%
 
 Start
-    : TOK_SELECT Columns TOK_WHERE Conditions
-    | TOK_SELECT Columns
+    : TOK_SELECT Selectors TOK_WHERE Conditions
+    | TOK_SELECT Selectors
 ;
 
-Columns
-    : Columns TOK_COMMA Columnspec
-    | Columnspec
+Selectors
+    : Selectors TOK_COMMA Selector
+    | Selector
     | NoColumns
+;
+
+Selector
+    : Columnspec
+    | Value {
+        selector* s = (selector*)malloc(sizeof(selector));
+        s->type = SELECTOR_VALUE;
+        s->value = $1;
+        growbuf_append(SELECTORS, &s, sizeof(void*));
+    }
 ;
 
 Columnspec
     : TOK_COLUMN TOK_DASH TOK_COLUMN {
         for (size_t i = $1; i <= $3; i++) {
-            if (!growbuf_contains(SELECTED_COLUMNS, i)) {
-                growbuf_append(SELECTED_COLUMNS, &i, sizeof(size_t));
+            if (!column_selected(SELECTORS, i)) {
+                selector* s = (selector*)malloc(sizeof(selector));
+                s->type = SELECTOR_COLUMN;
+                s->column = i;
+                growbuf_append(SELECTORS, &s, sizeof(void*));
             }
         }
     }
     | TOK_COLUMN {
-        size_t col = $1;
-        if (!growbuf_contains(SELECTED_COLUMNS, col)) {
-            growbuf_append(SELECTED_COLUMNS, &col, sizeof(size_t));
+        if (!column_selected(SELECTORS, $1)) {
+            selector* s = (selector*)malloc(sizeof(selector));
+            s->type = SELECTOR_COLUMN;
+            s->column = $1;
+            growbuf_append(SELECTORS, &s, sizeof(void*));
         }
     }
 ;
 
 NoColumns
-    : { 
-        size_t max = SIZE_MAX;
-        growbuf_append(SELECTED_COLUMNS, &max, sizeof(size_t));
+    : {
+        //
+        // select "column -1".
+        //
+
+        selector* s = (selector*)malloc(sizeof(selector));
+        s->type = SELECTOR_COLUMN;
+        s->column = SIZE_MAX;
+        growbuf_append(SELECTORS, &s, sizeof(void*));
     }
 ;
 

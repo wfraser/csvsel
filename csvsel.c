@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <sysexits.h>
@@ -24,13 +25,56 @@ int query_debug = 0;
 
 typedef struct {
     compound* root_condition;
-    growbuf*  selected_columns;
+    growbuf*  selectors;
 } row_evaluator_args;
 
 void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
 {
     if (query_evaluate(fields, rownum, args->root_condition)) {
-        print_selected_columns(fields, args->selected_columns);
+        for (size_t i = 0; i < args->selectors->size / sizeof(void*); i++) {
+            selector* c = ((selector**)(args->selectors->buf))[i];
+            switch (c->type) {
+            case SELECTOR_COLUMN:
+                if (c->column == SIZE_MAX) {
+                    for (size_t j = 0; j < fields->size / sizeof(void*); j++) {
+                        growbuf* field = ((growbuf**)(fields->buf))[j];
+                        print_csv_field((char*)field->buf);
+                        if (j+1 != fields->size / sizeof(void*)) {
+                            printf(",");
+                        }
+                    }
+                }
+                else {
+                    growbuf* field = ((growbuf**)(fields->buf))[c->column];
+                    print_csv_field((char*)field->buf);
+                }
+                break;
+
+            case SELECTOR_VALUE:
+                {
+                    val v = value_evaluate(&(c->value), fields, rownum);
+                    if (v.is_num) {
+                        printf("%ld", v.num);
+                    }
+                    else if (v.is_dbl) {
+                        printf("%lf", v.dbl);
+                    }
+                    else if (v.is_str) {
+                        print_csv_field(v.str);
+                    }
+                    else {
+                        fprintf(stderr, "Error: invalid value type!\n");
+                        return;
+                    }
+                }
+                break;
+            }
+
+            if (i+1 != args->selectors->size / sizeof(void*)) {
+                printf(",");
+            }
+        }
+        printf("\n");
     }
 }
 

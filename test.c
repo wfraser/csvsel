@@ -9,16 +9,15 @@ int query_debug = 1;
 
 int main(int argc, char** argv)
 {
-    growbuf* sc = growbuf_create(1);
-    compound *c = NULL;
+    growbuf* selectors = growbuf_create(1);
+    compound *condition = NULL;
 
-    //queryparse(NULL, 0, sc, &c);
     if (argc == 1) {
         printf("query parser test\nusage: test <query>\n");
         return 1;
     }
     else {
-        if (0 != queryparse(argv[1], strlen(argv[1]), sc, &c)) {
+        if (0 != queryparse(argv[1], strlen(argv[1]), selectors, &condition)) {
             printf(">>> parse error(s)\n");
         }
         else {
@@ -26,13 +25,18 @@ int main(int argc, char** argv)
         }
     }
 
-    for (size_t i = 0; i < (sc->size / sizeof(long)); i++) {
-        printf(">>> selected column %ld\n", ((long*)sc->buf)[i]);
+    for (size_t i = 0; i < (selectors->size / sizeof(void*)); i++) {
+        selector* s = ((selector**)(selectors->buf))[i];
+        printf(">>> selected ");
+        print_selector(s);
     }
 
-    if (NULL != c) {
+    if (NULL != condition) {
         printf(">>> condition:\n");
-        print_condition(c, 0);
+        print_condition(condition, 0);
+    }
+    else {
+        printf(">>> no condition\n");
     }
 
     return 0;

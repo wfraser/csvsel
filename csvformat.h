@@ -5,8 +5,7 @@
 
 typedef void (*row_evaluator)(growbuf* fields, size_t rownum, void* context);
 
-void print_selected_columns(growbuf* fields, growbuf* selected_columns);
-
+void print_csv_field(const char* field);
 int read_csv(FILE* input, row_evaluator row_evaluator, void* context);
 
 #endif // CSVSEL_H

@@ -22,42 +22,22 @@
 
 extern int query_debug;
 
-void print_selected_columns(growbuf* fields, growbuf* selected_columns)
+void print_csv_field(const char* field)
 {
-    size_t first_col = ((size_t*)selected_columns->buf)[0];
-
-    size_t num_selected_columns = selected_columns->size / sizeof(size_t);
-    size_t num_columns = fields->size / sizeof(void*);
-    size_t limit = (first_col == -1) ? num_columns : num_selected_columns;
-    
-    for (size_t i = 0; i < limit; i++)
-    {
-        size_t col = (first_col == -1) ? i : ((size_t*)selected_columns->buf)[i];
-        
-        char* colstr = (char*)((growbuf**)fields->buf)[col]->buf;
-
-        if (NULL != strchr(colstr, ' ')) {
-            printf("\"");
-            for (size_t j = 0; j < strlen(colstr); j++) {
-                if (colstr[j] == '"') {
-                    printf("\"\"");
-                }
-                else {
-                    printf("%c", colstr[j]);
-                }
+    if (NULL != strchr(field, ' ')) {
+        printf("\"");
+        for (size_t i = 0; i < strlen(field); i++) {
+            if (field[i] == '"') {
+                printf("\"\"");
             }
-            printf("\"");
+            else {
+                printf("%c", field[i]);
+            }
         }
-        else {
-            printf("%s", colstr);
-        }
-
-        if (i != limit - 1) {
-            printf(",");
-        }
-        else {
-            printf("\n");
-        }
+        printf("\"");
+    }
+    else {
+        printf("%s", field);
     }
 }
     

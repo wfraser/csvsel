@@ -141,3 +141,22 @@ void print_condition(compound* c, size_t indent)
         break;
     }
 }
+
+void print_selector(selector* s)
+{
+    switch (s->type) {
+    case SELECTOR_COLUMN:
+        printf("column %zu\n", s->column);
+        break;
+
+    case SELECTOR_VALUE:
+        printf("value ");
+        print_val(s->value);
+        printf("\n");
+        break;
+
+    default:
+        printf("<unknown selector!!>\n");
+        break;
+    }
+}

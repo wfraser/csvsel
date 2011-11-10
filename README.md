@@ -14,7 +14,9 @@ Build Dependencies
 Query Language
 --------------
 
-    query: select [<columns>] [where <conditions>]
+    query: select [<selectors>] [where <conditions>]
+
+    selectors: [columns,values]
 
     columns: column[, columns]      (plurality of columns)
     columns: column[ - columns]     (range of columns)
@@ -79,17 +81,25 @@ Print the first column of any row where the second and third columns are equal (
 
     select %1 where %2 = %3
 
-Print the first column of any row where the second column (as a floating point number) is greater than 25.5:
+Print columns 1 thru 3 of any row where the second column (as a floating point number) is greater than 25.5:
 
-    select %1 where %2.float > 25.5
+    select %1-%3 where %2.float > 25.5
 
 Print all the columns of rows 25 through 42:
 
     select where %# >= 25 and %# <= 42
 
-Just print the second row of the whole file:
+Print the 2nd, 4th, 5th, and 6th columns of the whole file:
     
-    select %2
+    select %2,%4-%6
+
+Print the first column of all rows where the 2nd column is longer than the 3rd:
+
+    select %1 where strlen(%2) > strlen(%3)
+
+Print the length of the first column of all rows:
+
+    select strlen(%1)
 
 License
 -------
