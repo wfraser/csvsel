@@ -44,6 +44,13 @@ void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
                         }
                     }
                 }
+                else if (c->column >= (fields->size / sizeof(void*))) {
+                    //
+                    // An out-of-bounds column is defined as empty string.
+                    //
+
+                    print_csv_field("");
+                }
                 else {
                     growbuf* field = ((growbuf**)(fields->buf))[c->column];
                     print_csv_field((char*)field->buf);

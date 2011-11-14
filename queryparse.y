@@ -36,8 +36,10 @@ int queryparse(const char* query, size_t query_length, growbuf* selectors, compo
     SELECTORS = selectors;
     ROOT_CONDITION = root_condition;
 
-    //TODO: need to feed the query string to the bison parser.
-    // perhaps via a pipe??? :[
+    //
+    // The tokenizer needs its input via a FILE* (thanks Flex...)
+    // Silly hack solution is to open a pipe and feed it through that.
+    //
 
     if (0 != pipe(fd)) {
         perror("error creating pipe for parsing");

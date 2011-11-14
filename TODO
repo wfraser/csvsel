@@ -10,3 +10,7 @@ TODO:
         - clean these up
     - the val.is_foo bools are icky; should be an enum instead
 
+- support for date/time type
+
+- unit tests
+

@@ -40,7 +40,21 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
         ret.is_dbl = true;
     }
     else if (val->is_col) {
-        ret.str = strdup((char*)((growbuf**)fields->buf)[val->col]->buf);
+        size_t colnum = val->col;
+
+        if (colnum >= fields->size / sizeof(void*)) {
+            //
+            // Selected an out-of-bounds column
+            // This is defined as empty string.
+            //
+
+            ret.str = strdup("");
+        }
+        else {
+            growbuf* field = ((growbuf**)fields->buf)[colnum];
+            ret.str = strdup(field->buf);
+        }
+
         ret.is_str = true;
     }
     else if (val->is_special) {
@@ -162,13 +176,11 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
     }
     else if (val->conversion_type == TYPE_STRING) {
         if (ret.is_num) {
-            //TODO
-            ret.str = strdup("<TODO>");
+            asprintf(&(ret.str), "%ld", ret.num);
             ret.is_num = false;
         }
         else if (ret.is_dbl) {
-            //TODO
-            ret.str = strdup("<TODO>");
+            asprintf(&(ret.str), "%lf", val->dbl);
             ret.is_dbl = false;
         }
         ret.is_str = true;
@@ -257,6 +269,9 @@ bool query_evaluate(growbuf* fields, size_t rownum, compound* condition)
             } \
             else { \
                 retval = (strcmp(left.str, right.str) operator 0); \
+                /* these strings are intermediate results, so free them */ \
+                free(left.str); \
+                free(right.str); \
             } \
 
             switch (condition->simple.oper) {
