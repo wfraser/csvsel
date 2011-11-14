@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Werror -Wno-unused-function -std=c99 -O0 -gstabs -D_POSIX_SOURCE -D_XOPEN_SOURCE=500
+CFLAGS=-Wall -Werror -Wno-unused-function -Wno-unused-label -std=gnu99 -O0 -gstabs -D_POSIX_SOURCE -D_XOPEN_SOURCE=500
 YFLAGS=-t -v
 LFLAGS=-d
 
@@ -14,7 +14,7 @@ queryparse.tab.c: queryparse.y
 queryparse.tab.h: queryparse.tab.c
 
 querylex.tab.c: querylex.l
-	flex -P query_ -o querylex.tab.c querylex.l
+	flex -Pquery_ -oquerylex.tab.c querylex.l
 
 test: test.o queryparse.tab.o querylex.tab.o growbuf.o util.o functions.o
 
