@@ -26,10 +26,13 @@ int query_debug = 0;
 typedef struct {
     compound* root_condition;
     growbuf*  selectors;
+    FILE*     output;
 } row_evaluator_args;
 
 void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
 {
+    FILE* output = args->output;
+
     if (query_evaluate(fields, rownum, args->root_condition)) {
         for (size_t i = 0; i < args->selectors->size / sizeof(void*); i++) {
             selector* c = ((selector**)(args->selectors->buf))[i];
@@ -38,9 +41,9 @@ void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
                 if (c->column == SIZE_MAX) {
                     for (size_t j = 0; j < fields->size / sizeof(void*); j++) {
                         growbuf* field = ((growbuf**)(fields->buf))[j];
-                        print_csv_field((char*)field->buf);
+                        print_csv_field((char*)field->buf, output);
                         if (j+1 != fields->size / sizeof(void*)) {
-                            printf(",");
+                            fprintf(output, ",");
                         }
                     }
                 }
@@ -49,11 +52,11 @@ void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
                     // An out-of-bounds column is defined as empty string.
                     //
 
-                    print_csv_field("");
+                    print_csv_field("", output);
                 }
                 else {
                     growbuf* field = ((growbuf**)(fields->buf))[c->column];
-                    print_csv_field((char*)field->buf);
+                    print_csv_field((char*)field->buf, output);
                 }
                 break;
 
@@ -61,13 +64,13 @@ void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
                 {
                     val v = value_evaluate(&(c->value), fields, rownum);
                     if (v.is_num) {
-                        printf("%ld", v.num);
+                        fprintf(output, "%ld", v.num);
                     }
                     else if (v.is_dbl) {
-                        printf("%lf", v.dbl);
+                        fprintf(output, "%lf", v.dbl);
                     }
                     else if (v.is_str) {
-                        print_csv_field(v.str);
+                        print_csv_field(v.str, output);
                     }
                     else {
                         fprintf(stderr, "Error: invalid value type!\n");
@@ -78,14 +81,14 @@ void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
             }
 
             if (i+1 != args->selectors->size / sizeof(void*)) {
-                printf(",");
+                fprintf(output, ",");
             }
         }
-        printf("\n");
+        fprintf(output, "\n");
     }
 }
 
-int csv_select(FILE* input, const char* query, size_t query_len)
+int csv_select(FILE* input, FILE* output, const char* query, size_t query_len)
 {
     int retval = 0;
 
@@ -111,7 +114,7 @@ int csv_select(FILE* input, const char* query, size_t query_len)
         print_condition(root_condition, 0);
     }
     
-    row_evaluator_args args = { root_condition, selected_columns };
+    row_evaluator_args args = { root_condition, selected_columns, output };
     
     retval = read_csv(input, (row_evaluator)&eval_and_print, (void*)&args);
     
@@ -200,7 +203,7 @@ int main(int argc, char** argv)
 
     DEBUG printf("%s\n", (char*)query->buf);
 
-    switch (csv_select(input, query->buf, query->size)) {
+    switch (csv_select(input, stdout, query->buf, query->size)) {
         case 0:
             retval = EX_OK;
             break;

@@ -20,7 +20,7 @@ querylex.tab.c: querylex.l
 
 test: test.o unittests.o $(OBJS)
 
-test.o: queryparse.tab.h
+test.o: queryparse.tab.h unittests.h
 
 unittests.o: queryparse.tab.h
 

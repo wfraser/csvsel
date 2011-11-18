@@ -22,22 +22,22 @@
 
 extern int query_debug;
 
-void print_csv_field(const char* field)
+void print_csv_field(const char* field, FILE* output)
 {
     if (NULL != strchr(field, ' ')) {
-        printf("\"");
+        fprintf(output, "\"");
         for (size_t i = 0; i < strlen(field); i++) {
             if (field[i] == '"') {
-                printf("\"\"");
+                fprintf(output, "\"\"");
             }
             else {
-                printf("%c", field[i]);
+                fprintf(output, "%c", field[i]);
             }
         }
-        printf("\"");
+        fprintf(output, "\"");
     }
     else {
-        printf("%s", field);
+        fprintf(output, "%s", field);
     }
 }
     
