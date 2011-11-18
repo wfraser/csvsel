@@ -116,7 +116,9 @@ int csv_select(FILE* input, FILE* output, const char* query, size_t query_len)
     
     row_evaluator_args args = { root_condition, selected_columns, output };
     
-    retval = read_csv(input, (row_evaluator)&eval_and_print, (void*)&args);
+    if (0 != read_csv(input, (row_evaluator)&eval_and_print, (void*)&args)) {
+        retval = EX_DATAERR;
+    }
     
 cleanup:
     if (NULL != selected_columns) {

@@ -11,20 +11,49 @@
 #include <string.h>
 
 #include "growbuf.h"
-#include "queryparse.h"
-#include "util.h"
-#include "queryeval.h"
-
 #include "csvformat.h"
 
 //#define DEBUG
 #define DEBUG if (false)
 
-extern int query_debug;
+/**
+ * same as strchr() except it looks for multiple characters.
+ *
+ * Arguments:
+ *   haystack	- string to be searched
+ *   chars	- characters to search for
+ *   nchars	- number of characters in chars
+ *
+ * Return Value:
+ *   Pointer to the first one of chars in haystack, or NULL if none found.
+ */
+const char* strchrs(const char* haystack, const char* chars, size_t nchars)
+{
+    const char* end = haystack + strlen(haystack);
+    while (haystack < end) {
+        for (size_t i = 0; i < nchars; i++) {
+            if (*haystack == chars[i]) {
+                return haystack;
+            }
+        }
+	haystack++;
+    }
 
+    return NULL;
+}
+
+/**
+ * Print a CSV field, with appropriate double-quotes.
+ *
+ * No double-quotes are used, unless the field contains a comma, or a newline.
+ *
+ * Arguments:
+ *   field	- field to print
+ *   output	- file pointer to print to
+ */
 void print_csv_field(const char* field, FILE* output)
 {
-    if (NULL != strchr(field, ',') || NULL != strchr(field, '\n')) {
+    if (NULL != strchrs(field, ",\n", 2)) {
         fprintf(output, "\"");
         for (size_t i = 0; i < strlen(field); i++) {
             if (field[i] == '"') {
@@ -40,7 +69,19 @@ void print_csv_field(const char* field, FILE* output)
         fprintf(output, "%s", field);
     }
 }
-    
+
+/**
+ * Read a CSV file, running a function on each row.
+ *
+ * Arguments:
+ *   input	   - file pointer to CSV file to read
+ *   row_evaluator - pointer to a function which takes 3 arguments:
+ *                     - 2-dimensional growbuf with the fields
+ *                     - the row number
+ *                     - the context parameter passed to this function
+ *                   and returns void.
+ *   context       - arbitrary data to pass to the row evaluator
+ */
 int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
 {
     int retval = 0;
@@ -144,7 +185,7 @@ int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
                         "trailing garbage. Line %zu, field %zu\n",
                         rownum,
                         fields->size / sizeof(void*));
-                retval = EX_DATAERR;
+                retval = 1;
                 goto cleanup;
             }
             else {
