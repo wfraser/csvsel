@@ -24,7 +24,7 @@ extern int query_debug;
 
 void print_csv_field(const char* field, FILE* output)
 {
-    if (NULL != strchr(field, ' ')) {
+    if (NULL != strchr(field, ',') || NULL != strchr(field, '\n')) {
         fprintf(output, "\"");
         for (size_t i = 0; i < strlen(field); i++) {
             if (field[i] == '"') {
