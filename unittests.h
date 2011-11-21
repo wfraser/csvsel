@@ -8,6 +8,7 @@ bool test_csv_out1();
 bool test_csv_out2();
 bool test_csv_out3();
 bool test_csv_out4();
+bool test_select_columns();
 
 typedef struct {
     bool (*func)(void);
@@ -20,6 +21,7 @@ unittest TESTS[] = {
     {test_csv_out2, "csv output #2 (dquote)"},
     {test_csv_out3, "csv output #3 (space)"},
     {test_csv_out4, "csv output #4 (newline)"},
+    {test_select_columns,   "select columns"},
 };
 
 #endif //CSVSEL_UNITTEST_H

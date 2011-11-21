@@ -8,6 +8,9 @@
 
 #include "growbuf.h"
 #include "csvformat.h"
+#include "queryparse.h"
+
+extern int query_debug;
 
 /**
  * Read the contents of a file descriptor into a growbuf.
@@ -94,4 +97,79 @@ bool test_csv_out3()
 bool test_csv_out4()
 {
     return test_csv_out("hello\nworld", "\"hello\nworld\"");
+}
+
+/**
+ * Select columns 1-10 and 77, specifying some overlaps too.
+ * Tests that the overlap detection works, as well as basic column selection.
+ */
+bool test_select_columns()
+{
+    bool retval = false;
+    growbuf* selected_columns = growbuf_create(10);
+    compound* root_condition = NULL;
+    const char* query = "select %1-%10,%7,%77,%2-%4";
+    selector** selectors = NULL;
+    bool oks[11] = {};
+
+    query_debug = 0;
+    if (0 != queryparse(query, strlen(query), selected_columns, &root_condition)) {
+        retval = false;
+        printf("parse failed\n");
+        goto cleanup;
+    }
+
+    if (11 != selected_columns->size / sizeof(void*)) {
+        retval = false;
+        printf("wrong number of cols selected\n");
+        goto cleanup;
+    }
+
+    selectors = (selector**)selected_columns->buf;
+
+    for (size_t i = 0; i < 11; i++) {
+        if (selectors[i]->type != SELECTOR_COLUMN) {
+            retval = false;
+            printf("selected something not a column\n");
+            goto cleanup;
+        }
+        if (selectors[i]->column == 76) {
+            oks[10] = true;
+        }
+        else if (selectors[i]->column <= 10) {
+            oks[selectors[i]->column] = true;
+        }
+        else {
+            retval = false;
+            printf("selected a column not in the set: %zu\n",
+                    selectors[i]->column);
+            goto cleanup;
+        }
+    }
+
+    for (size_t i = 0; i < 11; i++) {
+        if (!oks[i]) {
+            retval = false;
+            printf("a column missing from the set: %zu\n", i);
+            goto cleanup;
+        }
+    }
+
+    retval = true;
+
+cleanup:
+    if (selected_columns != NULL) {
+        for (size_t i = 0; i < selected_columns->size / sizeof(void*); i++) {
+            free(((selector**)selected_columns->buf)[i]);
+        }
+        growbuf_free(selected_columns);
+    }
+
+    if (root_condition != NULL) {
+        free(root_condition);
+    }
+
+    query_debug = 1;
+
+    return retval;
 }
