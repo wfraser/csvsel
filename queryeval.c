@@ -39,6 +39,11 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
         ret.dbl = val->dbl;
         ret.is_dbl = true;
     }
+    else if (val->is_str) {
+        ret.str = (char*)malloc(strlen(val->str)+1);
+        strcpy(ret.str, val->str);
+        ret.is_str = true;
+    }
     else if (val->is_col) {
         size_t colnum = val->col;
 
