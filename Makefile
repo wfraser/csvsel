@@ -2,11 +2,11 @@ CFLAGS=-Wall -Werror -Wno-unused-function -Wno-unused-label -std=gnu99 -O0 -gsta
 YFLAGS=-t -v
 LFLAGS=-d
 
-OBJS=growbuf.o csvformat.o queryeval.o queryparse.tab.o querylex.tab.o util.o functions.o
+OBJS=csvsel.o growbuf.o csvformat.o queryeval.o queryparse.tab.o querylex.tab.o util.o functions.o
 
 all: csvsel
 
-csvsel: csvsel.o $(OBJS)
+csvsel: main.o $(OBJS)
 
 queryeval.o: queryparse.tab.h
 
