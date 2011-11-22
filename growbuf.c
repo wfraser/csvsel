@@ -86,8 +86,17 @@ void growbuf_free(growbuf* gb)
  */
 int growbuf_append(growbuf* gb, const void* buf, size_t len)
 {
-    if (NULL == gb || NULL == gb->buf) {
+    if (NULL == gb) {
         return -EINVAL;
+    }
+
+    if (NULL == gb->buf) {
+        gb->buf = malloc(len);
+        if (NULL == gb->buf) {
+            fprintf(stderr, "GROWBUF EXPANSION FAILED\n");
+            return -ENOMEM;
+        }
+        gb->allocated_size = len;
     }
 
     if (gb->size + len > gb->allocated_size) {
