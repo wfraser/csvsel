@@ -35,10 +35,15 @@ growbuf* growbuf_create(size_t initial_size)
         return NULL;
     }
 
-    gb->buf = (void*)malloc(initial_size);
-    if (NULL == gb->buf) {
-        free(gb);
-        return NULL;
+    if (initial_size > 0) {
+        gb->buf = (void*)malloc(initial_size);
+        if (NULL == gb->buf) {
+            free(gb);
+            return NULL;
+        }
+    }
+    else {
+        gb->buf = NULL;
     }
 
     gb->allocated_size = initial_size;
@@ -81,7 +86,7 @@ void growbuf_free(growbuf* gb)
  */
 int growbuf_append(growbuf* gb, const void* buf, size_t len)
 {
-    if (NULL == gb) {
+    if (NULL == gb || NULL == gb->buf) {
         return -EINVAL;
     }
 
