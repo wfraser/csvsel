@@ -34,15 +34,18 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
     if (val->is_num) {
         ret.num = val->num;
         ret.is_num = true;
+        ret.conversion_type = TYPE_LONG;
     }
     else if (val->is_dbl) {
         ret.dbl = val->dbl;
         ret.is_dbl = true;
+        ret.conversion_type = TYPE_DOUBLE;
     }
     else if (val->is_str) {
         ret.str = (char*)malloc(strlen(val->str)+1);
         strcpy(ret.str, val->str);
         ret.is_str = true;
+        ret.conversion_type = TYPE_STRING;
     }
     else if (val->is_col) {
         size_t colnum = val->col;
@@ -61,16 +64,19 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
         }
 
         ret.is_str = true;
+        ret.conversion_type = TYPE_STRING;
     }
     else if (val->is_special) {
         switch (val->special) {
         case SPECIAL_NUMCOLS:
             ret.num = fields->size / sizeof(void*);
             ret.is_num = true;
+            ret.conversion_type = TYPE_LONG;
             break;
         case SPECIAL_ROWNUM:
             ret.num = rownum;
             ret.is_num = true;
+            ret.conversion_type = TYPE_LONG;
             break;
         }
     }
@@ -83,24 +89,53 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
         switch (val->func->func) {
         case FUNC_SUBSTR:
             {
+                ssize_t start  = args[1].num;
+                ssize_t len    = args[2].num;
+                size_t  in_len = strlen(args[0].str);
+
+                if (start < 0) {
+                    if (-1*start >= in_len) {
+                        start = 0;
+                    }
+                    else {
+                        start += in_len;
+                    }
+                }
+                else if (start >= in_len) {
+                    start = in_len;
+                    len = 0;
+                }
+
                 if (val->func->num_args == 2) {
-                    args[2].num = -1;
-                    args[2].is_num = true;
+                    len = -1;
                 }
 
-                if (args[2].num < 0) {
-                    args[2].num += strlen(args[0].str) + 1;
+                if (len < 0) {
+                    if (-1*len >= in_len) {
+                        len = in_len - start;
+                    }
+                    else {
+                        len += in_len - start + 1;
+                    }
+                }
+                else if (start + len > in_len) {
+                    len = in_len - start;
+                }
+                
+                printf("start(%zu) len(%zu) in_len(%zu)\n",
+                        start, len, in_len);
+
+                char* result = (char*)malloc(len + 1);
+                
+                if (len > 0) {
+                    memcpy(result, args[0].str + start, len);
                 }
 
-                size_t start = args[1].num;
-                size_t len = args[2].num;
-                size_t size = len - start;
-                char* result = (char*)malloc(size + 1);
-                memcpy(result, args[0].str + start, size);
-                result[size] = '\0';
+                result[len] = '\0';
 
                 ret.str = result;
                 ret.is_str = true;
+                ret.conversion_type = TYPE_STRING;
             }
             break;
 
@@ -108,6 +143,7 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
             {
                 ret.num = strlen(args[0].str);
                 ret.is_num = true;
+                ret.conversion_type = TYPE_LONG;
             }
             break;
 
@@ -139,6 +175,7 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
                 }
 
                 ret.is_dbl = true;
+                ret.conversion_type = TYPE_DOUBLE;
             }
             break;
 
