@@ -122,7 +122,7 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
                     len = in_len - start;
                 }
                 
-                printf("start(%zu) len(%zu) in_len(%zu)\n",
+                DEBUG printf("start(%zu) len(%zu) in_len(%zu)\n",
                         start, len, in_len);
 
                 char* result = (char*)malloc(len + 1);
