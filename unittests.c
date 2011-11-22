@@ -9,6 +9,8 @@
 #include "growbuf.h"
 #include "csvformat.h"
 #include "queryparse.h"
+#include "csvsel.h"
+#include "util.h"
 
 extern int query_debug;
 
@@ -31,7 +33,7 @@ void read_fd(int fd, growbuf* out)
     } while (bytes > 0);
 }
 
-enum { IN = 0, OUT = 1};
+enum { READ = 0, WRITE = 1 };
 
 bool test_dummy()
 {
@@ -54,16 +56,19 @@ bool test_csv_out(const char* instr, const char* outstr)
     bool retval = false;
     int fd[2];
     growbuf* buf;
-    FILE* out;
+    FILE* print_output;
 
     pipe(fd);
-    fcntl(fd[IN], F_SETFL, O_NONBLOCK);
-    out = fdopen(fd[OUT], "a");
+    
+    // set our read end nonblocking because csvsel won't close it
+    fcntl(fd[READ], F_SETFL, O_NONBLOCK);
 
-    print_csv_field(instr, out);
-    fflush(out);
+    print_output = fdopen(fd[WRITE], "a");
+    print_csv_field(instr, print_output);
+    fflush(print_output);
+
     buf = growbuf_create(10);
-    read_fd(fd[IN], buf);
+    read_fd(fd[READ], buf);
 
     //printf("%1$d bytes: (%2$.*1$s)\n", buf->size, (char*)buf->buf);
 
@@ -72,9 +77,9 @@ bool test_csv_out(const char* instr, const char* outstr)
     }
 
     growbuf_free(buf);
-    fclose(out);
-    close(fd[IN]);
-    close(fd[OUT]);
+    fclose(print_output);
+    close(fd[WRITE]);
+    close(fd[READ]);
 
     return retval;
 }
@@ -112,7 +117,6 @@ bool test_select_columns()
     selector** selectors = NULL;
     bool oks[11] = {};
 
-    query_debug = 0;
     if (0 != queryparse(query, strlen(query), selected_columns, &root_condition)) {
         retval = false;
         printf("parse failed\n");
@@ -169,7 +173,132 @@ cleanup:
         free(root_condition);
     }
 
-    query_debug = 1;
-
     return retval;
+}
+
+bool test_substr()
+{
+    bool ret = false;
+    growbuf* fields = growbuf_create(1*sizeof(void*));
+    growbuf* field = growbuf_create(0);
+    growbuf_append(fields, &field, sizeof(void*));
+    field->buf = (void*)"graycode";
+    
+    val value = {};
+    func function = {};
+
+    value.is_func = true;
+    value.func = &function;
+    value.conversion_type = TYPE_STRING;
+
+#define TYPE_CHECKS(x) (x.is_str && x.conversion_type == TYPE_STRING \
+        && NULL != x.str)
+
+    function.func = FUNC_SUBSTR;
+    function.args[0].is_col = true;
+    function.args[0].col = 0;
+    function.args[0].conversion_type = TYPE_STRING;
+    function.args[1].is_num = true;
+    function.args[1].conversion_type = TYPE_LONG;
+    function.num_args = 2;
+
+    function.args[1].num = 20;
+    val final = value_evaluate(&value, fields, 0);
+
+    // 20 from the start (start out of range => empty string)
+    // substr("graycode", 20) = ""
+    if (!TYPE_CHECKS(final) || strcmp("", final.str) != 0) {
+        printf("#1\n");
+        print_val(final);
+        goto cleanup;
+    }
+
+    free(final.str);
+    function.args[1].num = -3;
+    final = value_evaluate(&value, fields, 0);
+
+    // 3 from the end, to the end
+    // substr("graycode", -3) = "ode"
+    if (!TYPE_CHECKS(final) || strcmp("ode", final.str) != 0) {
+        printf("#2\n");
+        print_val(final);
+        goto cleanup;
+    }
+
+    free(final.str);
+    function.args[1].num = 4;
+    final = value_evaluate(&value, fields, 0);
+
+    // 4 from the start, to the end
+    // substr("graycode", 4) = "code"
+    if (!TYPE_CHECKS(final) || strcmp("code", final.str) != 0) {
+        printf("#3\n");
+        print_val(final);
+        goto cleanup;
+    }
+
+    free(final.str);
+    function.args[2].is_num = true;
+    function.args[2].num = 3;
+    function.args[2].conversion_type = TYPE_LONG;
+    function.num_args = 3;
+    final = value_evaluate(&value, fields, 0);
+
+    // 4 from the start, length of 3
+    // substr("graycode", 4, 3) = "cod"
+    if (!TYPE_CHECKS(final) || strcmp("cod", final.str) != 0) {
+        printf("#4\n");
+        print_val(final);
+        goto cleanup;
+    }
+
+    free(final.str);
+    function.args[2].num = -3;
+    final = value_evaluate(&value, fields, 0);
+  
+    // 4 from the start, up to and including 3 from the end
+    // substr("graycode", 4, -3) = "co"
+    if (!TYPE_CHECKS(final) || strcmp("co", final.str) != 0) {
+        printf("#5\n");
+        print_val(final);
+        goto cleanup;
+    }
+
+    free(final.str);
+    function.args[1].num = 20;
+    final = value_evaluate(&value, fields, 0);
+
+    // 20 from the start, up to and including 3 from the end
+    // doesn't make sense because start > end, so yields empty string
+    // substr("graycode", 7, -3) = ""
+    if (!TYPE_CHECKS(final) || strcmp("", final.str) != 0) {
+        printf("#6\n");
+        print_val(final);
+        goto cleanup;
+    }
+
+    free(final.str);
+    function.args[1].num = -20;
+    function.args[2].num = 40;
+    final = value_evaluate(&value, fields, 0);
+
+    // 20 from the end, length of 40.
+    // out of bounds start gets trimmed to 0
+    // out of bounds length gets trimmed to length of the string
+    // substr("graycode", -20, 40) = "graycode"
+    if (!TYPE_CHECKS(final) || strcmp("graycode", final.str) != 0) {
+        printf("#7\n");
+        print_val(final);
+        goto cleanup;
+    }
+
+    free(final.str);
+    ret = true;
+
+cleanup:
+    field->buf = NULL;
+    growbuf_free(field);
+    growbuf_free(fields);
+
+    return ret;
 }

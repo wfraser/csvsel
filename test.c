@@ -7,7 +7,7 @@
 #include "util.h"
 #include "unittests.h"
 
-int query_debug = 1;
+extern int query_debug;
 
 void test_parse(const char* query)
 {
