@@ -58,6 +58,7 @@ void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
             case SELECTOR_VALUE:
                 {
                     val v = value_evaluate(&(c->value), fields, rownum);
+                    
                     if (v.is_num) {
                         fprintf(output, "%ld", v.num);
                     }
@@ -71,6 +72,8 @@ void eval_and_print(growbuf* fields, size_t rownum, row_evaluator_args* args)
                         fprintf(stderr, "Error: invalid value type!\n");
                         return;
                     }
+
+                    val_free(&v);
                 }
                 break;
             }
@@ -87,17 +90,17 @@ int csv_select(FILE* input, FILE* output, const char* query, size_t query_len)
 {
     int retval = 0;
 
-    growbuf* selected_columns = NULL;
+    growbuf* selectors = NULL;
     compound* root_condition = NULL;
 
-    selected_columns = growbuf_create(1);
-    if (NULL == selected_columns) {
+    selectors = growbuf_create(1);
+    if (NULL == selectors) {
         fprintf(stderr, "malloc failed\n");
         retval = 2;
         goto cleanup;
     }
 
-    if (0 != queryparse(query, query_len, selected_columns, &root_condition))
+    if (0 != queryparse(query, query_len, selectors, &root_condition))
     {
         retval = 1;
         goto cleanup;
@@ -109,15 +112,22 @@ int csv_select(FILE* input, FILE* output, const char* query, size_t query_len)
         print_condition(root_condition, 0);
     }
     
-    row_evaluator_args args = { root_condition, selected_columns, output };
+    row_evaluator_args args = { root_condition, selectors, output };
     
     if (0 != read_csv(input, (row_evaluator)&eval_and_print, (void*)&args)) {
         retval = EX_DATAERR;
     }
     
 cleanup:
-    if (NULL != selected_columns) {
-        growbuf_free(selected_columns);
+    if (NULL != selectors) {
+        for (size_t i = 0; i < selectors->size / sizeof(void*); i++) {
+            selector* s = ((selector**)selectors->buf)[i];
+            if (NULL != s) {
+                selector_free(s);
+                free(s);
+            }
+        }
+        growbuf_free(selectors);
     }
     
     if (NULL != root_condition) {

@@ -23,6 +23,20 @@ extern int query_debug;
 
 extern functionspec FUNCTIONS[];
 
+void val_free(val* val)
+{
+    if (val->is_str) {
+        free(val->str);
+    }
+}
+
+void selector_free(selector* s)
+{
+    if (s->type == SELECTOR_VALUE) {
+        val_free(&s->value);
+    }
+}
+
 /**
  * Evaluates a val to a constant.
  * Returns a new val with all strings copied.
@@ -150,8 +164,8 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
         case FUNC_MAX:
         case FUNC_MIN:
             {
-                double arg0;
-                double arg1;
+                double arg0 = 0.0;
+                double arg1 = 0.0;
 
                 if (args[0].is_dbl) {
                     arg0 = args[0].dbl;
@@ -208,6 +222,10 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
         default:
             fprintf(stderr, "ERROR: no implementation for function %s\n",
                     FUNCTIONS[val->func->func].name);
+        }
+
+        for (size_t i = 0; i < val->func->num_args; i++) {
+            val_free(&args[i]);
         }
     }
 

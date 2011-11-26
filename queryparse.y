@@ -25,6 +25,7 @@ extern FILE* query_in;
 
 static int query_parse(void);
 extern int query_lex();
+extern int query_lex_destroy();
 static void query_error();
 
 extern functionspec FUNCTIONS[];
@@ -62,6 +63,7 @@ int queryparse(const char* query, size_t query_length, growbuf* selectors, compo
     int retval = query_parse();
 
     fclose(query_in);
+    query_lex_destroy();
 
     return retval;
 }
