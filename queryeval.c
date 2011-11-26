@@ -179,6 +179,32 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
             }
             break;
 
+        case FUNC_LOWER:
+        case FUNC_UPPER:
+            {
+                size_t len = strlen(args[0].str);
+                ret.str = (char*)malloc(len + 1);
+
+                for (size_t i = 0; i <= len; i++) {
+                    if (val->func->func == FUNC_LOWER
+                            && args[0].str[i] >= 'A' && args[0].str[i] <= 'Z') {
+                        ret.str[i] = args[0].str[i] + ('a' - 'A');
+                    }
+                    else if (val->func->func == FUNC_UPPER
+                            && args[0].str[i] >= 'a' && args[0].str[i] <= 'z') {
+                        ret.str[i] = args[0].str[i] - ('a' - 'A');
+                    }
+                    else {
+                        ret.str[i] = args[0].str[i];
+                    }
+                }
+
+                ret.is_str = true;
+                ret.conversion_type = TYPE_STRING;
+            }
+            break;
+       
+
         default:
             fprintf(stderr, "ERROR: no implementation for function %s\n",
                     FUNCTIONS[val->func->func].name);

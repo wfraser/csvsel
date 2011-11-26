@@ -302,3 +302,54 @@ cleanup:
 
     return ret;
 }
+
+bool test_upper_lower()
+{
+    bool ret = false;
+    growbuf* fields = growbuf_create(1*sizeof(void*));
+    growbuf* field = growbuf_create(0);
+    growbuf_append(fields, &field, sizeof(void*));
+    val value = {};
+    func function = {};
+
+    value.is_func = true;
+    value.func = &function;
+    value.conversion_type = TYPE_STRING;
+
+    function.func = FUNC_UPPER;
+    function.args[0].is_col = true;
+    function.args[0].col = 0;
+    function.args[0].conversion_type = TYPE_STRING;
+    function.num_args = 1;
+
+    field->buf = "gRaYcOde12 34_-+";
+    
+    val final = value_evaluate(&value, fields, 0);
+
+    if (!TYPE_CHECKS(final) || strcmp("GRAYCODE12 34_-+", final.str) != 0) {
+        printf("upper failed\n");  
+        print_val(final);
+        goto cleanup;
+    }  
+
+    free(final.str);
+    function.func = FUNC_LOWER;
+    final = value_evaluate(&value, fields, 0);
+
+    if (!TYPE_CHECKS(final) || strcmp("graycode12 34_-+", final.str) != 0) {
+        printf("lower failed\n");
+        print_val(final);
+        goto cleanup;
+    }
+
+    free(final.str);
+    ret = true;
+
+cleanup:
+    field->buf = NULL;
+    growbuf_free(field);
+    growbuf_free(fields);
+
+    return ret;
+}
+

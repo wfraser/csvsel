@@ -15,6 +15,8 @@ typedef enum {
     FUNC_STRLEN,
     FUNC_MAX,
     FUNC_MIN,
+    FUNC_LOWER,
+    FUNC_UPPER,
     MAX_FUNC
 } function;
 
