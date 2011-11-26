@@ -75,6 +75,7 @@ int main(int argc, char** argv)
                 goto cleanup;
             }
 
+            i++;
             query_arg_start = i + 2;
         }
         else {
