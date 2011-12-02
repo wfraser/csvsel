@@ -23,6 +23,8 @@ test: test.o unittests.o $(OBJS)
 
 test.o: queryparse.tab.h unittests.h
 
+util.o: queryparse.tab.h
+
 unittests.o: queryparse.tab.h
 
 clean:
