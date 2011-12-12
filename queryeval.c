@@ -56,8 +56,8 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
         ret.conversion_type = TYPE_DOUBLE;
     }
     else if (val->is_str) {
-        size_t n = strlen(val->str);
-        ret.str = (char*)malloc(n+1);
+        size_t n = strlen(val->str) + 1;
+        ret.str = (char*)malloc(n);
         strncpy(ret.str, val->str, n);
         ret.is_str = true;
         ret.conversion_type = TYPE_STRING;
