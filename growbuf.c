@@ -129,7 +129,7 @@ int growbuf_append(growbuf* gb, const void* buf, size_t len)
             
     }
 
-    memcpy(gb->buf + gb->size, buf, len);
+    memcpy((char*)gb->buf + gb->size, buf, len);
 
     gb->size += len;
 

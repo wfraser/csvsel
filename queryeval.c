@@ -43,7 +43,8 @@ void selector_free(selector* s)
  */
 val value_evaluate(const val* val, growbuf* fields, size_t rownum)
 {
-    struct _val ret = {};
+    struct _val ret;
+    memset(&ret, 0, sizeof(struct _val));
 
     if (val->is_num) {
         ret.num = val->num;
