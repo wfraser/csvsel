@@ -300,11 +300,7 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
     else if (val->conversion_type == TYPE_DOUBLE) {
         if (ret.is_str) {
             char* str = ret.str;
-            char* input = str;
-            if (*input == '$') {
-                input++;
-            }
-            ret.dbl = csvsel_strtod(input, NULL);
+            ret.dbl = csvsel_strtod(str, NULL);
             ret.is_str = false;
             free(str);
         }
