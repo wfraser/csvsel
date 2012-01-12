@@ -37,6 +37,54 @@ void selector_free(selector* s)
     }
 }
 
+double csvsel_strtod(const char *str, char **unused)
+{
+    (void)unused;
+
+    char *buf = (char*)malloc(strlen(str)+1);
+    if (buf == NULL) {
+        fprintf(stderr, "malloc failed!\n");
+        abort();
+    }
+
+    for (size_t i = 0, j = 0; ; i++) {
+        if (str[i] != '$' && str[i] != ',') {
+            buf[j++] = str[i];
+            if (str[i] == '\0') {
+                break;
+            }
+        }
+    }
+
+    double d = strtod(buf, NULL);
+
+    free(buf);
+    return d;
+}
+
+long csvsel_atol(const char *str)
+{
+    char *buf = (char*)malloc(strlen(str)+1);
+    if (NULL == buf) {
+        fprintf(stderr, "malloc failed!\n");
+        abort();
+    }
+
+    for (size_t i = 0, j = 0; ; i++) {
+        if (str[i] != '$' && str[i] != ',') {
+            buf[j++] = str[i];
+            if (str[i] == '\0') {
+                break;
+            }
+        }
+    }
+
+    long l = atol(buf);
+
+    free(buf);
+    return l;
+}
+
 /**
  * Evaluates a val to a constant.
  * Returns a new val with all strings copied.
@@ -238,7 +286,7 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
     if (val->conversion_type == TYPE_LONG) {
         if (ret.is_str) {
             char* str = ret.str;
-            ret.num = atol(str);
+            ret.num = csvsel_atol(str);
             ret.is_str = false;
             free(str);
         }
@@ -251,7 +299,11 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
     else if (val->conversion_type == TYPE_DOUBLE) {
         if (ret.is_str) {
             char* str = ret.str;
-            ret.dbl = strtod(str, NULL);
+            char* input = str;
+            if (*input == '$') {
+                input++;
+            }
+            ret.dbl = csvsel_strtod(input, NULL);
             ret.is_str = false;
             free(str);
         }
@@ -310,7 +362,7 @@ bool query_evaluate(growbuf* fields, size_t rownum, compound* condition)
             if (b.is_dbl) { \
                 if (a.is_str) { \
                     char* temp = a.str; \
-                    a.dbl = strtod(temp, NULL); \
+                    a.dbl = csvsel_strtod(temp, NULL); \
                     a.is_dbl = true; \
                     a.is_str = false; \
                     free(temp); \
@@ -324,7 +376,7 @@ bool query_evaluate(growbuf* fields, size_t rownum, compound* condition)
             else if (b.is_num && a.is_str) { \
                 if (strchr(a.str, '.') != NULL) { \
                     char* temp = a.str; \
-                    a.dbl = strtod(temp, NULL); \
+                    a.dbl = csvsel_strtod(temp, NULL); \
                     a.is_dbl = true; \
                     a.is_str = false; \
                     free(temp); \
@@ -334,7 +386,7 @@ bool query_evaluate(growbuf* fields, size_t rownum, compound* condition)
                 } \
                 else { \
                     char* temp = a.str; \
-                    a.num = atol(temp); \
+                    a.num = csvsel_atol(temp); \
                     a.is_num = true; \
                     a.is_str = false; \
                     free(temp); \
