@@ -1,5 +1,4 @@
-CFLAGS=-Wall -Werror -Wno-unused-function -Wno-unused-label -std=gnu99 -O0 -gstabs -D_GNU_SOURCE
-#CFLAGS=-Wall -Werror -Wno-unused-function -Wno-unused-label -std=gnu99 -O3 -D_GNU_SOURCE
+CFLAGS=-pedantic -std=c1x -O3 -D_GNU_SOURCE
 YFLAGS=-t -v
 LFLAGS=-d
 

@@ -1,0 +1,5 @@
+*.o
+*.tab.c
+*.tab.h
+*.output
+csvsel
