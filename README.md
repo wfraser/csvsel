@@ -44,10 +44,16 @@ Functions
     * if `length` is negative, it counts from the end of the string. -1 means "to the end of the string".
 
 * **`strlen`** ( string `s` ) -> int
-    * returns the length of string `s`
+    * returns the length of string `s` with leading and trailing whitespace removed.
+
+* **`trim`** ( string `s` ) -> string
+    * returns a copy of `s`
 
 * **`min`** / **`max`** ( int|float `a`, int|float `b` ) -> float
     * returns the smaller or bigger, respectively, of `a` and `b`, as a float.
+
+* **`abs`** ( int|float `n` ) -> float
+    * returns the absolute value of `n` as a float.
 
 Notes
 -----

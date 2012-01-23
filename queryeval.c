@@ -243,6 +243,23 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
             }
             break;
 
+        case FUNC_ABS:
+            {
+                double arg0 = 0.0;
+
+                if (args[0].is_dbl) {
+                    arg0 = args[0].dbl;
+                }
+                else if (args[0].is_num) {
+                    arg0 = (double)args[0].num;
+                }
+
+                ret.dbl = fabs(arg0);
+                ret.is_dbl = true;
+                ret.conversion_type = TYPE_DOUBLE;
+            }
+            break;
+
         case FUNC_LOWER:
         case FUNC_UPPER:
             {
@@ -267,7 +284,36 @@ val value_evaluate(const val* val, growbuf* fields, size_t rownum)
                 ret.conversion_type = TYPE_STRING;
             }
             break;
-       
+
+        case FUNC_TRIM:
+            {
+                size_t len = strlen(args[0].str);
+                size_t start, end;
+
+                #define IS_WHITESPACE(c) \
+                    ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\r')
+                
+                for (start = 0; start < len; start++) {
+                    if (!IS_WHITESPACE(args[0].str[start])) {
+                        break;
+                    }
+                }
+
+                for (end = len - 1; end > start; end--) {
+                    if (!IS_WHITESPACE(args[0].str[end])) {
+                        break;
+                    }
+                }
+
+                len = end - start + 1;
+                ret.str = (char*)malloc(len + 1);
+                memcpy(ret.str, args[0].str + start, len);
+                ret.str[len] = '\0';
+
+                ret.is_str = true;
+                ret.conversion_type = TYPE_STRING;
+            }
+            break;
 
         default:
             fprintf(stderr, "ERROR: no implementation for function %s\n",
