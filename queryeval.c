@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 #include "growbuf.h"
 #include "queryparse.h"
