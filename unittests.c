@@ -23,7 +23,7 @@ extern int query_debug;
  */
 void read_fd(int fd, growbuf* out)
 {
-    char buf[512] = {};
+    char buf[512] = {0};
     ssize_t bytes;
     do {
         bytes = read(fd, buf, sizeof(buf));
@@ -115,7 +115,7 @@ bool test_select_columns()
     compound* root_condition = NULL;
     const char* query = "select %1-%10,%7,%77,%2-%4";
     selector** selectors = NULL;
-    bool oks[11] = {};
+    bool oks[11] = {0};
 
     if (0 != queryparse(query, strlen(query), selected_columns, &root_condition)) {
         retval = false;
@@ -184,8 +184,8 @@ bool test_substr()
     growbuf_append(fields, &field, sizeof(void*));
     field->buf = (void*)"graycode";
     
-    val value = {};
-    func function = {};
+    val value = {0};
+    func function = {0};
 
     value.is_func = true;
     value.func = &function;
@@ -309,8 +309,8 @@ bool test_upper_lower()
     growbuf* fields = growbuf_create(1*sizeof(void*));
     growbuf* field = growbuf_create(0);
     growbuf_append(fields, &field, sizeof(void*));
-    val value = {};
-    func function = {};
+    val value = {0};
+    func function = {0};
 
     value.is_func = true;
     value.func = &function;
