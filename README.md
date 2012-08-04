@@ -30,7 +30,7 @@ Query Language
 
     value: (<column> | <special> | "string" | number | <function>(value, ...) )[(.float | .int | .string)]
 
-    operator: (= | != | < | > | <= | >= )
+    operator: (= | != | < | > | <= | >= | contains )
 
     special:
         %#  (number of the current row, 0-based)

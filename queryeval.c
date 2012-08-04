@@ -389,6 +389,33 @@ bool query_evaluate(growbuf* fields, size_t rownum, compound* condition)
             val right = value_evaluate(
                                 &(condition->simple.right), fields, rownum);
 
+            if (condition->simple.oper == TOK_CONTAINS) {
+                //
+                // 'contains' is a special case.
+                //
+
+                if (left.is_num) {
+                    asprintf(&(left.str), "%ld", left.num);
+                }
+                else if (left.is_dbl) {
+                    asprintf(&(left.str), "%lf", left.dbl);
+                }
+
+                if (right.is_num) {
+                    asprintf(&(right.str), "%ld", right.num);
+                }
+                else if (right.is_dbl) {
+                    asprintf(&(right.str), "%lf", right.dbl);
+                }
+
+                retval = (NULL != strstr(left.str, right.str));
+
+                free(left.str);
+                free(right.str);
+
+                goto cleanup;
+            }
+
             //
             // Next we do automatic type conversion if needed.
             //

@@ -31,6 +31,7 @@ IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_-]+
 
 "select"        { return TOK_SELECT; }
 "where"         { return TOK_WHERE; }
+"contains"      { return TOK_CONTAINS; }
 "="             { return TOK_EQ; }
 "!="            { return TOK_NEQ; }
 ">"             { return TOK_GT; }
