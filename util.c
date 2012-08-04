@@ -146,7 +146,10 @@ void print_selector(selector* s)
 {
     switch (s->type) {
     case SELECTOR_COLUMN:
-        printf("column %zu\n", s->column);
+        if (s->column == -1)
+            printf("all columns\n");
+        else
+            printf("column %zu\n", s->column);
         break;
 
     case SELECTOR_VALUE:
