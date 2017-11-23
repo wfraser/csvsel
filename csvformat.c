@@ -86,6 +86,7 @@ static int read_csv_internal(
     bool in_dquot = false;
     bool prev_was_dquot = false;
     uint64_t byte_offset = 0;
+    uint64_t row_byte_offset = 0;
 
     fields = growbuf_create(1);
     field = growbuf_create(32);
@@ -137,23 +138,24 @@ static int read_csv_internal(
                         && (fields->size / sizeof(void*) > 1
                             || ((growbuf**)fields->buf)[0]->size > 0))
                 {
-                    row_evaluator(fields, rownum, byte_offset, context);
+                    row_evaluator(fields, rownum, row_byte_offset, context);
                 }
 
                 for (size_t i = 0; i < fields->size / sizeof(void*); i++) {
                     growbuf_free(((growbuf**)(fields->buf))[i]);
                 }
+                fields->size = 0;
 
                 if (one_row_only) {
                     goto cleanup;
                 }
 
-                fields->size = 0;
                 field = growbuf_create(32);
                 growbuf_append(fields, &field, sizeof(void*));
                 in_dquot = false;
                 prev_was_dquot = false;
                 rownum++;
+                row_byte_offset = byte_offset + 1;
                 break;
             }
             else {

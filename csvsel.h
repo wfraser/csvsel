@@ -11,7 +11,6 @@ typedef struct {
     FILE*     output;
 } row_evaluator_args;
 
-void eval_and_print(growbuf* fields, size_t rownum, size_t byte_offset, row_evaluator_args* args);
 int csv_select(FILE* input, FILE* output, const char* query, size_t query_len);
 
 #endif //CSVSEL_H
