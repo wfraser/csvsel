@@ -14,7 +14,7 @@ Build Dependencies
 Query Language
 --------------
 
-    query: select [<selectors>] [where <conditions>] [order by <selector> [ascending | descending]]
+    query: select [<selectors>] [where <conditions>] [order by <value> [ascending | descending]]
 
     selectors: [columns,values]
 
