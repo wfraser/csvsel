@@ -503,19 +503,19 @@ OrderSpec
     : Value {
         order* o = (order*)malloc(sizeof(order));
         o->direction = ORDER_ASCENDING;
-        o->value = &$1;
+        o->value = $1;
         *ORDER = o;
     }
     | Value TOK_ASCENDING {
         order* o = (order*)malloc(sizeof(order));
         o->direction = ORDER_ASCENDING;
-        o->value = &$1;
+        o->value = $1;
         *ORDER = o;
     }
     | Value TOK_DESCENDING {
         order* o = (order*)malloc(sizeof(order));
         o->direction = ORDER_DESCENDING;
-        o->value = &$1;
+        o->value = $1;
         *ORDER = o;
     }
 ;

@@ -37,8 +37,8 @@ int main(int argc, char** argv)
         goto cleanup;
     }
 
-    if (argc == 1) {
-        fprintf(stderr, "usage: %s [-f inputfile] <query string>\n", argv[0]);
+    if (argc == 1 || (argc == 2 && strcmp(argv[1], "--help") == 0)) {
+        fprintf(stderr, "usage: %s [-f inputfile] [--debug] <query string>\n", argv[0]);
         retval = EX_USAGE;
         goto cleanup;
     }

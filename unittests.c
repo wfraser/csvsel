@@ -370,7 +370,7 @@ bool test_order()
 
     if (1 != selected_columns->size / sizeof(void*)) {
         retval = false;
-        printf("wrong number of cols selected\n");
+        printf("wrong number of cols selected: %zu\n", selected_columns->size / sizeof(void*));
         goto cleanup;
     }
 
@@ -380,15 +380,15 @@ bool test_order()
         goto cleanup;
     }
 
-    if (!order->value->is_col) {
+    if (!order->value.is_col) {
         retval = false;
         printf("wrong sort value: not a column\n");
         goto cleanup;
     }
 
-    if (order->value->col != 1) {
+    if (order->value.col != 1) {
         retval = false;
-        printf("wrong sort value: not column 2, %d\n", order->value->col);
+        printf("wrong sort value: not column 2, %zu\n", order->value.col);
         goto cleanup;
     }
 

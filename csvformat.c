@@ -36,7 +36,7 @@ const char* strchrs(const char* haystack, const char* chars, size_t nchars)
                 return haystack;
             }
         }
-	haystack++;
+        haystack++;
     }
 
     return NULL;
@@ -70,28 +70,22 @@ void print_csv_field(const char* field, FILE* output)
     }
 }
 
-/**
- * Read a CSV file, running a function on each row.
- *
- * Arguments:
- *   input	   - file pointer to CSV file to read
- *   row_evaluator - pointer to a function which takes 3 arguments:
- *                     - 2-dimensional growbuf with the fields
- *                     - the row number
- *                     - the context parameter passed to this function
- *                   and returns void.
- *   context       - arbitrary data to pass to the row evaluator
- */
-int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
+static int read_csv_internal(
+        FILE* input,
+        row_evaluator row_evaluator,
+        void* context,
+        bool one_row_only,
+        int start_row_number)
 {
     int retval = 0;
-    
+
     growbuf* fields = NULL;
     growbuf* field  = NULL;
-    
-    size_t rownum = 0;
+
+    size_t rownum = start_row_number;
     bool in_dquot = false;
     bool prev_was_dquot = false;
+    uint64_t byte_offset = 0;
 
     fields = growbuf_create(1);
     field = growbuf_create(32);
@@ -143,12 +137,17 @@ int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
                         && (fields->size / sizeof(void*) > 1
                             || ((growbuf**)fields->buf)[0]->size > 0))
                 {
-                    row_evaluator(fields, rownum, context);
+                    row_evaluator(fields, rownum, byte_offset, context);
                 }
 
                 for (size_t i = 0; i < fields->size / sizeof(void*); i++) {
                     growbuf_free(((growbuf**)(fields->buf))[i]);
                 }
+
+                if (one_row_only) {
+                    goto cleanup;
+                }
+
                 fields->size = 0;
                 field = growbuf_create(32);
                 growbuf_append(fields, &field, sizeof(void*));
@@ -195,6 +194,8 @@ int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
 
         } // switch
 
+        byte_offset += 1;
+
     } // while (true)
 
 handle_eof:
@@ -202,7 +203,7 @@ handle_eof:
             && ((fields->size / sizeof(void*) > 1 
                  || ((growbuf**)fields->buf)[0]->size > 0)))
     {
-        row_evaluator(fields, rownum, context);
+        row_evaluator(fields, rownum, byte_offset, context);
     }
 
 cleanup:
@@ -214,4 +215,26 @@ cleanup:
     }
 
     return retval;
+}
+
+/**
+ * Read a CSV file, running a function on each row.
+ *
+ * Arguments:
+ *   input	   - file pointer to CSV file to read
+ *   row_evaluator - pointer to a function which takes 3 arguments:
+ *                     - 2-dimensional growbuf with the fields
+ *                     - the row number
+ *                     - the context parameter passed to this function
+ *                   and returns void.
+ *   context       - arbitrary data to pass to the row evaluator
+ */
+int read_csv(FILE* input, row_evaluator row_evaluator, void* context)
+{
+    return read_csv_internal(input, row_evaluator, context, false, 0);
+}
+
+int read_csv_row(FILE* input, int row_number, row_evaluator row_evaluator, void* context)
+{
+    return read_csv_internal(input, row_evaluator, context, true, row_number);
 }

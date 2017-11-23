@@ -80,7 +80,7 @@ typedef struct _selector {
 
 typedef struct _order {
     enum { ORDER_ASCENDING, ORDER_DESCENDING} direction;
-    val* value;
+    val value;
 } order;
 
 int queryparse(
