@@ -2,6 +2,7 @@
 #define CSVFORMAT_H
 
 #include <stdio.h>
+#include <stdint.h>
 
 typedef void (*row_evaluator)(growbuf* fields, size_t rownum, uint64_t byte_offset,  void* context);
 
