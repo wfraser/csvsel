@@ -48,6 +48,9 @@ Functions
 
 * **`trim`** ( string `s` ) -> string
     * returns a copy of `s` with leading and trailing whitespace removed.
+    
+* **`upper`** / **`lower`** ( string `s` ) -> string
+    * returns the string shifted to upper- or lower-case, respectively.
 
 * **`min`** / **`max`** ( int|float `a`, int|float `b` ) -> float
     * returns the smaller or bigger, respectively, of `a` and `b`, as a float.
