@@ -92,6 +92,7 @@ int csv_select(FILE* input, FILE* output, const char* query, size_t query_len)
 
     growbuf* selectors = NULL;
     compound* root_condition = NULL;
+    order* order = NULL;
 
     selectors = growbuf_create(1);
     if (NULL == selectors) {
@@ -100,7 +101,7 @@ int csv_select(FILE* input, FILE* output, const char* query, size_t query_len)
         goto cleanup;
     }
 
-    if (0 != queryparse(query, query_len, selectors, &root_condition))
+    if (0 != queryparse(query, query_len, selectors, &root_condition, &order))
     {
         retval = 1;
         goto cleanup;

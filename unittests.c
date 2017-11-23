@@ -113,11 +113,12 @@ bool test_select_columns()
     bool retval = false;
     growbuf* selected_columns = growbuf_create(10);
     compound* root_condition = NULL;
+    order* order = NULL;
     const char* query = "select %1-%10,%7,%77,%2-%4";
     selector** selectors = NULL;
     bool oks[11] = {0};
 
-    if (0 != queryparse(query, strlen(query), selected_columns, &root_condition)) {
+    if (0 != queryparse(query, strlen(query), selected_columns, &root_condition, &order)) {
         retval = false;
         printf("parse failed\n");
         goto cleanup;
@@ -162,15 +163,14 @@ bool test_select_columns()
     retval = true;
 
 cleanup:
-    if (selected_columns != NULL) {
-        for (size_t i = 0; i < selected_columns->size / sizeof(void*); i++) {
-            free(((selector**)selected_columns->buf)[i]);
-        }
-        growbuf_free(selected_columns);
-    }
+    free_selectors(selected_columns);
 
     if (root_condition != NULL) {
         free(root_condition);
+    }
+
+    if (order != NULL) {
+        free(order);
     }
 
     return retval;
@@ -353,3 +353,57 @@ cleanup:
     return ret;
 }
 
+bool test_order()
+{
+    bool retval = false;
+    growbuf* selected_columns = growbuf_create(1);
+    compound* root_condition = NULL;
+    order* order = NULL;
+    const char* query = "select %1 order by %2";
+    selector** selectors = NULL;
+
+    if (0 != queryparse(query, strlen(query), selected_columns, &root_condition, &order)) {
+        retval = false;
+        printf("parse failed\n");
+        goto cleanup;
+    }
+
+    if (1 != selected_columns->size / sizeof(void*)) {
+        retval = false;
+        printf("wrong number of cols selected\n");
+        goto cleanup;
+    }
+
+    if (order->direction != ORDER_ASCENDING) {
+        retval = false;
+        printf("wrong sort direction\n");
+        goto cleanup;
+    }
+
+    if (!order->value->is_col) {
+        retval = false;
+        printf("wrong sort value: not a column\n");
+        goto cleanup;
+    }
+
+    if (order->value->col != 1) {
+        retval = false;
+        printf("wrong sort value: not column 2, %d\n", order->value->col);
+        goto cleanup;
+    }
+
+    retval = true;
+
+cleanup:
+    free_selectors(selected_columns);
+
+    if (root_condition != NULL) {
+        free(root_condition);
+    }
+
+    if (order != NULL) {
+        free(order);
+    }
+
+    return retval;
+}

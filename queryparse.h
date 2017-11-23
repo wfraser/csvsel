@@ -78,8 +78,20 @@ typedef struct _selector {
     } type;
 } selector;
 
-int queryparse(const char* query, size_t query_length, growbuf* selected_columns, compound** root_condition);
+typedef struct _order {
+    enum { ORDER_ASCENDING, ORDER_DESCENDING} direction;
+    val* value;
+} order;
+
+int queryparse(
+        const char* query,
+        size_t query_length,
+        growbuf* selected_columns,
+        compound** root_condition,
+        order** order);
 
 void free_compound(compound* c);
+
+void free_selectors(growbuf* g);
 
 #endif // QUERY_H

@@ -19,6 +19,7 @@
 
 static growbuf* SELECTORS;
 static compound** ROOT_CONDITION;
+static order** ORDER;
 
 extern int   query_debug;
 extern FILE* query_in;
@@ -30,12 +31,18 @@ static void query_error();
 
 extern functionspec FUNCTIONS[];
 
-int queryparse(const char* query, size_t query_length, growbuf* selectors, compound** root_condition)
+int queryparse(
+    const char* query,
+    size_t query_length,
+    growbuf* selectors,
+    compound** root_condition,
+    order** order)
 {
     int fd[2];
 
     SELECTORS = selectors;
     ROOT_CONDITION = root_condition;
+    ORDER = order;
 
     //
     // The tokenizer needs its input via a FILE* (thanks Flex...)
@@ -95,6 +102,16 @@ void free_compound(compound* c)
 
         free_compound(l);
         free_compound(r);
+    }
+}
+
+void free_selectors(growbuf* g)
+{
+    if (g != NULL) {
+        for (size_t i = 0; i < g->size / sizeof(void*); i++) {
+            free(((selector**)g->buf)[i]);
+        }
+        growbuf_free(g);
     }
 }
 
@@ -207,7 +224,9 @@ bool column_selected(growbuf* selectors, size_t column)
     condition     simple;
 }
 
-%token TOK_SELECT TOK_WHERE TOK_CONTAINS TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_DASH TOK_CONV_NUM TOK_CONV_DBL TOK_CONV_STR TOK_ERROR
+%token TOK_SELECT TOK_WHERE TOK_CONTAINS TOK_EQ TOK_NEQ TOK_GT TOK_LT TOK_GTE TOK_LTE TOK_AND
+    TOK_OR TOK_NOT TOK_LPAREN TOK_RPAREN TOK_COMMA TOK_DASH TOK_CONV_NUM TOK_CONV_DBL
+    TOK_CONV_STR TOK_ERROR TOK_ORDER TOK_BY TOK_ASCENDING TOK_DESCENDING
 
 %token <num> TOK_INTEGER
 %token <dbl> TOK_FLOAT
@@ -230,8 +249,8 @@ bool column_selected(growbuf* selectors, size_t column)
 %%
 
 Start
-    : TOK_SELECT Selectors TOK_WHERE Conditions
-    | TOK_SELECT Selectors
+    : TOK_SELECT Selectors TOK_WHERE Conditions Order
+    | TOK_SELECT Selectors Order
 ;
 
 Selectors
@@ -479,6 +498,32 @@ Value_Base
         $$.conversion_type = FUNCTIONS[$$.func->func].return_type;
     }
 ;
+
+OrderSpec
+    : Value {
+        order* o = (order*)malloc(sizeof(order));
+        o->direction = ORDER_ASCENDING;
+        o->value = &$1;
+        *ORDER = o;
+    }
+    | Value TOK_ASCENDING {
+        order* o = (order*)malloc(sizeof(order));
+        o->direction = ORDER_ASCENDING;
+        o->value = &$1;
+        *ORDER = o;
+    }
+    | Value TOK_DESCENDING {
+        order* o = (order*)malloc(sizeof(order));
+        o->direction = ORDER_DESCENDING;
+        o->value = &$1;
+        *ORDER = o;
+    }
+;
+
+Order
+    : TOK_ORDER TOK_BY OrderSpec
+    |
+    ;
 
 %%
 

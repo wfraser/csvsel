@@ -12,11 +12,12 @@ extern int query_debug;
 void test_parse(const char* query)
 {
     growbuf* selectors = growbuf_create(1);
-    compound *condition = NULL;
+    compound* condition = NULL;
+    order* order = NULL;
 
     printf(">>> query: %1$s\n", query);
 
-    if (0 != queryparse(query, strlen(query), selectors, &condition)) {
+    if (0 != queryparse(query, strlen(query), selectors, &condition, &order)) {
         printf(">>> parse error(s)\n");
     }
     else {

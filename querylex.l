@@ -32,6 +32,12 @@ IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_-]+
 "select"        { return TOK_SELECT; }
 "where"         { return TOK_WHERE; }
 "contains"      { return TOK_CONTAINS; }
+"order"         { return TOK_ORDER; }
+"by"            { return TOK_BY; }
+"asc"           { return TOK_ASCENDING; }
+"ascending"     { return TOK_ASCENDING; }
+"desc"          { return TOK_DESCENDING; }
+"descending"    { return TOK_DESCENDING; }
 "="             { return TOK_EQ; }
 "!="            { return TOK_NEQ; }
 ">"             { return TOK_GT; }

@@ -11,6 +11,7 @@ bool test_csv_out4();
 bool test_select_columns();
 bool test_substr();
 bool test_upper_lower();
+bool test_order();
 
 typedef struct {
     bool (*func)(void);
@@ -26,6 +27,7 @@ unittest TESTS[] = {
     {test_select_columns,   "select columns"},
     {test_substr,   "substr()"},
     {test_upper_lower,      "upper() and lower()"},
+    {test_order,    "order"},
 };
 
 #endif //CSVSEL_UNITTEST_H

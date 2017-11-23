@@ -15,7 +15,7 @@ queryparse.tab.c: queryparse.y
 
 queryparse.tab.h: queryparse.tab.c
 
-querylex.tab.c: querylex.l
+querylex.tab.c: querylex.l queryparse.tab.h
 	flex -Pquery_ -oquerylex.tab.c querylex.l
 
 test: test.o unittests.o $(OBJS)
